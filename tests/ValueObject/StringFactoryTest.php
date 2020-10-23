@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\ValueObject;
 
+use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\StringFactory;
+use OpenCodeModeling\JsonSchemaToPhpAst\ValueObjectFactory;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
 use PhpParser\Parser;
@@ -32,6 +34,15 @@ final class StringFactoryTest extends TestCase
     public function it_generates_code_from_native(): void
     {
         $this->assertCode($this->stringFactory->nodeVisitorsFromNative('name'));
+    }
+
+    /**
+     * @test
+     */
+    public function it_generates_code_via_value_object_factory(): void
+    {
+        $voFactory = new ValueObjectFactory($this->parser, true);
+        $this->assertCode($voFactory->nodeVisitors(StringType::fromDefinition(['type' => 'string', 'name' => 'name'])));
     }
 
     /**

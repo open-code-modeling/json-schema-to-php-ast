@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\ValueObject;
 
-use OpenCodeModeling\JsonSchemaToPhp\Type\IntegerType;
-use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\IntegerFactory;
+use OpenCodeModeling\JsonSchemaToPhp\Type\BooleanType;
+use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\BooleanFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObjectFactory;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
@@ -15,17 +15,17 @@ use PhpParser\PrettyPrinter\Standard;
 use PhpParser\PrettyPrinterAbstract;
 use PHPUnit\Framework\TestCase;
 
-final class IntegerFactoryTest extends TestCase
+final class BooleanFactoryTest extends TestCase
 {
     private Parser $parser;
     private PrettyPrinterAbstract $printer;
-    private IntegerFactory $integerFactory;
+    private BooleanFactory $integerFactory;
 
     public function setUp(): void
     {
         $this->parser = (new ParserFactory())->create(ParserFactory::ONLY_PHP7);
         $this->printer = new Standard(['shortArraySyntax' => true]);
-        $this->integerFactory = new IntegerFactory($this->parser, true);
+        $this->integerFactory = new BooleanFactory($this->parser, true);
     }
 
     /**
@@ -33,7 +33,7 @@ final class IntegerFactoryTest extends TestCase
      */
     public function it_generates_code_from_native(): void
     {
-        $this->assertCode($this->integerFactory->nodeVisitorsFromNative('number'));
+        $this->assertCode($this->integerFactory->nodeVisitorsFromNative('boolean'));
     }
 
     /**
@@ -42,7 +42,7 @@ final class IntegerFactoryTest extends TestCase
     public function it_generates_code_via_value_object_factory(): void
     {
         $voFactory = new ValueObjectFactory($this->parser, true);
-        $this->assertCode($voFactory->nodeVisitors(IntegerType::fromDefinition(['type' => 'integer'])));
+        $this->assertCode($voFactory->nodeVisitors(BooleanType::fromDefinition(['type' => 'boolean'])));
     }
 
     /**
@@ -50,7 +50,7 @@ final class IntegerFactoryTest extends TestCase
      */
     private function assertCode(array $nodeVisitors): void
     {
-        $ast = $this->parser->parse('<?php final class IntegerVO {}');
+        $ast = $this->parser->parse('<?php final class BooleanVO {}');
 
         $nodeTraverser = new NodeTraverser();
 
@@ -61,31 +61,31 @@ final class IntegerFactoryTest extends TestCase
         $expected = <<<'EOF'
 <?php
 
-final class IntegerVO
+final class BooleanVO
 {
-    private int $number;
-    public static function fromInt(int $number) : self
+    private bool $boolean;
+    public static function fromBool(bool $boolean) : self
     {
-        return new self($number);
+        return new self($boolean);
     }
-    private function __construct(int $number)
+    private function __construct(bool $boolean)
     {
-        $this->number = $number;
+        $this->boolean = $boolean;
     }
-    public function toInt() : int
+    public function toBool() : bool
     {
-        return $this->number;
+        return $this->boolean;
     }
     public function equals($other) : bool
     {
         if (!$other instanceof self) {
             return false;
         }
-        return $this->number === $other->number;
+        return $this->boolean === $other->boolean;
     }
     public function __toString() : string
     {
-        return (string) $this->number;
+        return $this->boolean ? 'TRUE' : 'FALSE';
     }
 }
 EOF;
