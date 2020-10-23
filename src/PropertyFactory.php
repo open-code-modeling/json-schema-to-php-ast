@@ -21,6 +21,16 @@ use PhpParser\NodeVisitor;
 final class PropertyFactory
 {
     /**
+     * @var bool
+     **/
+    private $typed;
+
+    public function __construct(bool $typed)
+    {
+        $this->typed = $typed;
+    }
+
+    /**
      * @param  TypeSet $typeSet
      * @return array<NodeVisitor>
      */
@@ -83,7 +93,7 @@ final class PropertyFactory
     {
         return [
             new \OpenCodeModeling\CodeAst\NodeVisitor\Property(
-                new PropertyGenerator($name, $type)
+                new PropertyGenerator($name, $type, null, $this->typed)
             ),
         ];
     }

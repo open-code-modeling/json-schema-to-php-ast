@@ -60,10 +60,10 @@ final class StringFactory
     private Parser $parser;
     private PropertyFactory $propertyFactory;
 
-    public function __construct(Parser $parser)
+    public function __construct(Parser $parser, bool $typed)
     {
         $this->parser = $parser;
-        $this->propertyFactory = new PropertyFactory();
+        $this->propertyFactory = new PropertyFactory($typed);
     }
 
     /**
@@ -73,19 +73,17 @@ final class StringFactory
     public function nodeVisitors(StringType $typeDefinition): array
     {
         $name = $typeDefinition->name() ?: 'text';
-        $type = $typeDefinition->type();
 
-        return $this->nodeVisitorsFromNative($type, $name);
+        return $this->nodeVisitorsFromNative($name);
     }
 
     /**
-     * @param string $type
      * @param string $name
      * @return array<NodeVisitor>
      */
-    public function nodeVisitorsFromNative(string $type, string $name): array
+    public function nodeVisitorsFromNative(string $name): array
     {
-        $nodeVisitors = $this->propertyFactory->nodeVisitorFromNative($name, $type);
+        $nodeVisitors = $this->propertyFactory->nodeVisitorFromNative($name, 'string');
         $nodeVisitors[] = $this->methodFromString($name);
         $nodeVisitors[] = $this->methodMagicConstruct($name);
         $nodeVisitors[] = $this->methodToString($name);
@@ -128,9 +126,7 @@ final class StringFactory
     {
         $method = new MethodGenerator(
             'toString',
-            [
-                new ParameterGenerator($argumentName, 'string'),
-            ],
+            [],
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, 'return $this->' . $argumentName . ';')
         );
@@ -152,7 +148,7 @@ PHP;
         $method = new MethodGenerator(
             'equals',
             [
-                new ParameterGenerator($argumentName, 'string'),
+                new ParameterGenerator($argumentName),
             ],
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, $body)
