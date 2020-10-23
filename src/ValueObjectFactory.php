@@ -16,6 +16,7 @@ use OpenCodeModeling\JsonSchemaToPhp\Type\NumberType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\BooleanFactory;
+use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\DateTimeFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\IntegerFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\NumberFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\StringFactory;
@@ -28,6 +29,7 @@ final class ValueObjectFactory
     private IntegerFactory $integerFactory;
     private BooleanFactory $booleanFactory;
     private NumberFactory $numberFactory;
+    private DateTimeFactory $dateTimeFactory;
 
     public function __construct(Parser $parser, bool $typed)
     {
@@ -35,6 +37,7 @@ final class ValueObjectFactory
         $this->integerFactory = new IntegerFactory($parser, $typed);
         $this->booleanFactory = new BooleanFactory($parser, $typed);
         $this->numberFactory = new NumberFactory($parser, $typed);
+        $this->dateTimeFactory = new DateTimeFactory($parser, $typed);
     }
 
     /**
@@ -45,7 +48,13 @@ final class ValueObjectFactory
     {
         switch (true) {
             case $typeDefinition instanceof StringType:
-                return $this->stringFactory->nodeVisitors($typeDefinition);
+                switch ($typeDefinition->format()) {
+                    case TypeDefinition::FORMAT_DATETIME:
+                        return $this->dateTimeFactory->nodeVisitors($typeDefinition);
+                    default:
+                        return $this->stringFactory->nodeVisitors($typeDefinition);
+                }
+                // no break
             case $typeDefinition instanceof IntegerType:
                 return $this->integerFactory->nodeVisitors($typeDefinition);
             case $typeDefinition instanceof BooleanType:
