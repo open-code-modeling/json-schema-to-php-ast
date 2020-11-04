@@ -59,10 +59,12 @@ final class NumberFactory
 {
     private Parser $parser;
     private PropertyFactory $propertyFactory;
+    private bool $typed;
 
     public function __construct(Parser $parser, bool $typed)
     {
         $this->parser = $parser;
+        $this->typed = $typed;
         $this->propertyFactory = new PropertyFactory($typed);
     }
 
@@ -103,6 +105,7 @@ final class NumberFactory
             MethodGenerator::FLAG_STATIC | MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, 'return new self($' . $argumentName . ');')
         );
+        $method->setTyped($this->typed);
         $method->setReturnType('self');
 
         return new ClassMethod($method);
@@ -118,6 +121,7 @@ final class NumberFactory
             MethodGenerator::FLAG_PRIVATE,
             new BodyGenerator($this->parser, \sprintf('$this->%s = $%s;', $argumentName, $argumentName))
         );
+        $method->setTyped($this->typed);
 
         return new ClassMethod($method);
     }
@@ -130,6 +134,7 @@ final class NumberFactory
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, 'return $this->' . $argumentName . ';')
         );
+        $method->setTyped($this->typed);
         $method->setReturnType('float');
 
         return new ClassMethod($method);
@@ -153,6 +158,7 @@ PHP;
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, $body)
         );
+        $method->setTyped($this->typed);
         $method->setReturnType('bool');
 
         return new ClassMethod($method);
@@ -166,6 +172,7 @@ PHP;
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, 'return (string)$this->' . $argumentName . ';')
         );
+        $method->setTyped($this->typed);
         $method->setReturnType('string');
 
         return new ClassMethod($method);
