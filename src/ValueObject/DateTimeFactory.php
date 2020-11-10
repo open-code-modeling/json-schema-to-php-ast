@@ -208,6 +208,7 @@ PHP;
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, 'return $this->' . $argumentName . '->format(self::OUTPUT_FORMAT);')
         );
+        $method->setTyped($this->typed);
         $method->setReturnType('string');
 
         return new ClassMethod($method);
