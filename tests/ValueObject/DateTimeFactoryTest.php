@@ -51,6 +51,23 @@ final class DateTimeFactoryTest extends TestCase
     }
 
     /**
+     * @test
+     */
+    public function it_generates_code_via_value_object_factory_with_class_builder(): void
+    {
+        $voFactory = new ValueObjectFactory($this->parser, true);
+
+        $classBuilder = $voFactory->classBuilder(
+            StringType::fromDefinition(['type' => 'string', 'format' => TypeDefinition::FORMAT_DATETIME])
+        );
+        $classBuilder->setName('DateTimeVO');
+
+        $this->assertCode(
+            $classBuilder->generate($this->parser)
+        );
+    }
+
+    /**
      * @param array<NodeVisitor> $nodeVisitors
      */
     private function assertCode(array $nodeVisitors): void

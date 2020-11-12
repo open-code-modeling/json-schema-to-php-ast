@@ -93,9 +93,14 @@ final class PropertyFactory
     {
         return [
             new \OpenCodeModeling\CodeAst\NodeVisitor\Property(
-                new PropertyGenerator($name, $type, null, $this->typed)
+                $this->propertyGenerator($name, $type)
             ),
         ];
+    }
+
+    public function propertyGenerator(string $name, string $type): PropertyGenerator
+    {
+        return new PropertyGenerator($name, $type, null, $this->typed);
     }
 
     /**

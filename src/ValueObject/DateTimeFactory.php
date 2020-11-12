@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace OpenCodeModeling\JsonSchemaToPhpAst\ValueObject;
 
+use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
 use OpenCodeModeling\CodeAst\Code\BodyGenerator;
 use OpenCodeModeling\CodeAst\Code\ClassConstGenerator;
 use OpenCodeModeling\CodeAst\Code\IdentifierGenerator;
@@ -107,6 +108,13 @@ final class DateTimeFactory
         return $this->nodeVisitorsFromNative($name);
     }
 
+    public function classBuilder(StringType $typeDefinition): ClassBuilder
+    {
+        $name = $typeDefinition->name() ?: 'dateTime';
+
+        return $this->classBuilderFromNative($name)->setTyped($this->typed);
+    }
+
     /**
      * @param string $name
      * @param string $outputFormat
@@ -121,27 +129,47 @@ final class DateTimeFactory
             new ClassConstant(
                 new IdentifierGenerator(
                     'OUTPUT_FORMAT',
-                    new ClassConstGenerator(
-                        'OUTPUT_FORMAT',
-                        $outputFormat,
-                        ClassConstGenerator::FLAG_PRIVATE
-                    )
+                    $this->classConstant($outputFormat)
                 )
             )
         );
 
-        $nodeVisitors[] = $this->methodFromDateTime($name);
-        $nodeVisitors[] = $this->methodFromString($name);
-        $nodeVisitors[] = $this->methodMagicConstruct($name);
-        $nodeVisitors[] = $this->methodToString($name);
-        $nodeVisitors[] = $this->methodDateTime($name);
-        $nodeVisitors[] = $this->methodMagicToString();
-        $nodeVisitors[] = $this->methodEnsureUtc($name);
+        $nodeVisitors[] = new ClassMethod($this->methodFromDateTime($name));
+        $nodeVisitors[] = new ClassMethod($this->methodFromString($name));
+        $nodeVisitors[] = new ClassMethod($this->methodMagicConstruct($name));
+        $nodeVisitors[] = new ClassMethod($this->methodToString($name));
+        $nodeVisitors[] = new ClassMethod($this->methodDateTime($name));
+        $nodeVisitors[] = new ClassMethod($this->methodMagicToString());
+        $nodeVisitors[] = new ClassMethod($this->methodEnsureUtc($name));
 
         return $nodeVisitors;
     }
 
-    public function methodFromDateTime(string $argumentName): NodeVisitor
+    public function classBuilderFromNative(string $name, string $outputFormat = DATE_ATOM): ClassBuilder
+    {
+        return ClassBuilder::fromNodes(
+            $this->classConstant($outputFormat)->generate(),
+            $this->propertyFactory->propertyGenerator($name, 'DateTimeImmutable')->generate(),
+            $this->methodFromDateTime($name)->generate(),
+            $this->methodFromString($name)->generate(),
+            $this->methodMagicConstruct($name)->generate(),
+            $this->methodToString($name)->generate(),
+            $this->methodDateTime($name)->generate(),
+            $this->methodMagicToString()->generate(),
+            $this->methodEnsureUtc($name)->generate(),
+        )->setTyped($this->typed);
+    }
+
+    public function classConstant(string $outputFormat = DATE_ATOM): ClassConstGenerator
+    {
+        return new ClassConstGenerator(
+            'OUTPUT_FORMAT',
+            $outputFormat,
+            ClassConstGenerator::FLAG_PRIVATE
+        );
+    }
+
+    public function methodFromDateTime(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             'fromDateTime',
@@ -154,10 +182,10 @@ final class DateTimeFactory
         $method->setTyped($this->typed);
         $method->setReturnType('self');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodFromString(string $argumentName): NodeVisitor
+    public function methodFromString(string $argumentName): MethodGenerator
     {
         $body = <<<PHP
     try {
@@ -182,10 +210,10 @@ PHP;
         $method->setTyped($this->typed);
         $method->setReturnType('self');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodMagicConstruct(string $argumentName): NodeVisitor
+    public function methodMagicConstruct(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             '__construct',
@@ -197,10 +225,10 @@ PHP;
         );
         $method->setTyped($this->typed);
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodToString(string $argumentName): NodeVisitor
+    public function methodToString(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             'toString',
@@ -211,10 +239,10 @@ PHP;
         $method->setTyped($this->typed);
         $method->setReturnType('string');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodDateTime(string $argumentName): NodeVisitor
+    public function methodDateTime(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             'dateTime',
@@ -225,10 +253,10 @@ PHP;
         $method->setTyped($this->typed);
         $method->setReturnType('DateTimeImmutable');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodMagicToString(): NodeVisitor
+    public function methodMagicToString(): MethodGenerator
     {
         $method = new MethodGenerator(
             '__toString',
@@ -239,10 +267,10 @@ PHP;
         $method->setTyped($this->typed);
         $method->setReturnType('string');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodEnsureUtc(string $argumentName): NodeVisitor
+    public function methodEnsureUtc(string $argumentName): MethodGenerator
     {
         $body = <<<'PHP'
         if ($argumentName->getTimezone()->getName() !== 'UTC') {
@@ -264,6 +292,6 @@ PHP;
         $method->setTyped($this->typed);
         $method->setReturnType('DateTimeImmutable');
 
-        return new ClassMethod($method);
+        return $method;
     }
 }

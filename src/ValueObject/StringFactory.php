@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace OpenCodeModeling\JsonSchemaToPhpAst\ValueObject;
 
+use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
 use OpenCodeModeling\CodeAst\Code\BodyGenerator;
 use OpenCodeModeling\CodeAst\Code\MethodGenerator;
 use OpenCodeModeling\CodeAst\Code\ParameterGenerator;
@@ -79,6 +80,13 @@ final class StringFactory
         return $this->nodeVisitorsFromNative($name);
     }
 
+    public function classBuilder(StringType $typeDefinition): ClassBuilder
+    {
+        $name = $typeDefinition->name() ?: 'text';
+
+        return $this->classBuilderFromNative($name)->setTyped($this->typed);
+    }
+
     /**
      * @param string $name
      * @return array<NodeVisitor>
@@ -86,16 +94,28 @@ final class StringFactory
     public function nodeVisitorsFromNative(string $name): array
     {
         $nodeVisitors = $this->propertyFactory->nodeVisitorFromNative($name, 'string');
-        $nodeVisitors[] = $this->methodFromString($name);
-        $nodeVisitors[] = $this->methodMagicConstruct($name);
-        $nodeVisitors[] = $this->methodToString($name);
-        $nodeVisitors[] = $this->methodEquals($name);
-        $nodeVisitors[] = $this->methodMagicToString($name);
+        $nodeVisitors[] = new ClassMethod($this->methodFromString($name));
+        $nodeVisitors[] = new ClassMethod($this->methodMagicConstruct($name));
+        $nodeVisitors[] = new ClassMethod($this->methodToString($name));
+        $nodeVisitors[] = new ClassMethod($this->methodEquals($name));
+        $nodeVisitors[] = new ClassMethod($this->methodMagicToString($name));
 
         return $nodeVisitors;
     }
 
-    public function methodFromString(string $argumentName): NodeVisitor
+    public function classBuilderFromNative(string $name): ClassBuilder
+    {
+        return ClassBuilder::fromNodes(
+            $this->propertyFactory->propertyGenerator($name, 'string')->generate(),
+            $this->methodFromString($name)->generate(),
+            $this->methodMagicConstruct($name)->generate(),
+            $this->methodToString($name)->generate(),
+            $this->methodEquals($name)->generate(),
+            $this->methodMagicToString($name)->generate(),
+        )->setTyped($this->typed);
+    }
+
+    public function methodFromString(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             'fromString',
@@ -108,10 +128,10 @@ final class StringFactory
         $method->setTyped($this->typed);
         $method->setReturnType('self');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodMagicConstruct(string $argumentName): NodeVisitor
+    public function methodMagicConstruct(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             '__construct',
@@ -123,10 +143,10 @@ final class StringFactory
         );
         $method->setTyped($this->typed);
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodToString(string $argumentName): NodeVisitor
+    public function methodToString(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             'toString',
@@ -137,10 +157,10 @@ final class StringFactory
         $method->setTyped($this->typed);
         $method->setReturnType('string');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodEquals(string $propertyName, string $argumentName = 'other'): NodeVisitor
+    public function methodEquals(string $propertyName, string $argumentName = 'other'): MethodGenerator
     {
         $body = <<<PHP
     if(!\$$argumentName instanceof self) {
@@ -161,10 +181,10 @@ PHP;
         $method->setTyped($this->typed);
         $method->setReturnType('bool');
 
-        return new ClassMethod($method);
+        return $method;
     }
 
-    public function methodMagicToString(string $argumentName): NodeVisitor
+    public function methodMagicToString(string $argumentName): MethodGenerator
     {
         $method = new MethodGenerator(
             '__toString',
@@ -175,6 +195,6 @@ PHP;
         $method->setTyped($this->typed);
         $method->setReturnType('string');
 
-        return new ClassMethod($method);
+        return $method;
     }
 }
