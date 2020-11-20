@@ -2,27 +2,25 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 0.2.0 - TBD
+## 0.2.0 - 2020-11-20
 
-### Added
 
-- Nothing.
+-----
 
-### Changed
+### Release Notes for [0.2.0](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/2)
 
-- Nothing.
 
-### Deprecated
 
-- Nothing.
+### 0.2.0
 
-### Removed
+- Total issues resolved: **2**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
 
-- Nothing.
+#### enhancement
 
-### Fixed
-
-- Nothing.
+ - [8: Add factory for string uuid value object](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/8) thanks to @sandrokeil
+ - [7: Add factory for string enum value object](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/7) thanks to @sandrokeil
 
 ## 0.1.0 - 2020-11-20
 
