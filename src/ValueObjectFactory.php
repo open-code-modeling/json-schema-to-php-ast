@@ -22,6 +22,7 @@ use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\EnumFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\IntegerFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\NumberFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\StringFactory;
+use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\UuidFactory;
 use PhpParser\NodeVisitor;
 use PhpParser\Parser;
 
@@ -33,6 +34,7 @@ final class ValueObjectFactory
     private NumberFactory $numberFactory;
     private DateTimeFactory $dateTimeFactory;
     private EnumFactory $enumFactory;
+    private UuidFactory $uuidFactory;
 
     /**
      * @param Parser $parser
@@ -52,6 +54,7 @@ final class ValueObjectFactory
         $this->numberFactory = new NumberFactory($parser, $typed);
         $this->dateTimeFactory = new DateTimeFactory($parser, $typed);
         $this->enumFactory = new EnumFactory($parser, $typed, $constNameFilter, $constValueFilter);
+        $this->uuidFactory = new UuidFactory($parser, $typed);
     }
 
     /**
@@ -68,6 +71,8 @@ final class ValueObjectFactory
                 switch ($typeDefinition->format()) {
                     case TypeDefinition::FORMAT_DATETIME:
                         return $this->dateTimeFactory->nodeVisitors($typeDefinition);
+                    case 'uuid':
+                        return $this->uuidFactory->nodeVisitors($typeDefinition);
                     default:
                         return $this->stringFactory->nodeVisitors($typeDefinition);
                 }
@@ -94,6 +99,8 @@ final class ValueObjectFactory
                 switch ($typeDefinition->format()) {
                     case TypeDefinition::FORMAT_DATETIME:
                         return $this->dateTimeFactory->classBuilder($typeDefinition);
+                    case 'uuid':
+                        return $this->uuidFactory->classBuilder($typeDefinition);
                     default:
                         return $this->stringFactory->classBuilder($typeDefinition);
                 }
