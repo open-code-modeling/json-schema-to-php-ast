@@ -34,10 +34,11 @@
     "require": {
         "php": "^7.4 || ^8.0",
         "open-code-modeling/json-schema-to-php": "dev-master",
-        "open-code-modeling/php-code-ast": "^0.8.2|dev-master"
+        "open-code-modeling/php-code-ast": "^0.8.6|dev-master"
     },
     "require-dev": {
         "jangregor/phpstan-prophecy": "^0.8.0",
+        "laminas/laminas-filter": "^2.9",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpstan/phpstan": "^0.12.33",
         "phpstan/phpstan-strict-rules": "^0.12.4",

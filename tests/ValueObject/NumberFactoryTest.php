@@ -4,28 +4,18 @@ declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\ValueObject;
 
-use OpenCodeModeling\JsonSchemaToPhp\Type\IntegerType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\NumberType;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\NumberFactory;
-use OpenCodeModeling\JsonSchemaToPhpAst\ValueObjectFactory;
 use PhpParser\NodeTraverser;
 use PhpParser\NodeVisitor;
-use PhpParser\Parser;
-use PhpParser\ParserFactory;
-use PhpParser\PrettyPrinter\Standard;
-use PhpParser\PrettyPrinterAbstract;
-use PHPUnit\Framework\TestCase;
 
-final class NumberFactoryTest extends TestCase
+final class NumberFactoryTest extends BaseTestCase
 {
-    private Parser $parser;
-    private PrettyPrinterAbstract $printer;
     private NumberFactory $integerFactory;
 
     public function setUp(): void
     {
-        $this->parser = (new ParserFactory())->create(ParserFactory::ONLY_PHP7);
-        $this->printer = new Standard(['shortArraySyntax' => true]);
+        parent::setUp();
         $this->integerFactory = new NumberFactory($this->parser, true);
     }
 
@@ -42,8 +32,7 @@ final class NumberFactoryTest extends TestCase
      */
     public function it_generates_code_via_value_object_factory(): void
     {
-        $voFactory = new ValueObjectFactory($this->parser, true);
-        $this->assertCode($voFactory->nodeVisitors(NumberType::fromDefinition(['type' => 'number'])));
+        $this->assertCode($this->voFactory->nodeVisitors(NumberType::fromDefinition(['type' => 'number'])));
     }
 
     /**
@@ -51,9 +40,7 @@ final class NumberFactoryTest extends TestCase
      */
     public function it_generates_code_via_value_object_factory_with_class_builder(): void
     {
-        $voFactory = new ValueObjectFactory($this->parser, true);
-
-        $classBuilder = $voFactory->classBuilder(
+        $classBuilder = $this->voFactory->classBuilder(
             NumberType::fromDefinition(['type' => 'number'])
         );
         $classBuilder->setName('NumberVO');

@@ -124,12 +124,14 @@ final class DateTimeFactory
     {
         $nodeVisitors = $this->propertyFactory->nodeVisitorFromNative($name, 'DateTimeImmutable');
 
+        $classConstant = $this->classConstant($outputFormat);
+
         \array_unshift(
             $nodeVisitors,
             new ClassConstant(
                 new IdentifierGenerator(
-                    'OUTPUT_FORMAT',
-                    $this->classConstant($outputFormat)
+                    $classConstant->getName(),
+                    $classConstant
                 )
             )
         );

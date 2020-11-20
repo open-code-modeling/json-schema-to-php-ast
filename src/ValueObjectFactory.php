@@ -18,6 +18,7 @@ use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\BooleanFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\DateTimeFactory;
+use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\EnumFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\IntegerFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\NumberFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\StringFactory;
@@ -31,14 +32,26 @@ final class ValueObjectFactory
     private BooleanFactory $booleanFactory;
     private NumberFactory $numberFactory;
     private DateTimeFactory $dateTimeFactory;
+    private EnumFactory $enumFactory;
 
-    public function __construct(Parser $parser, bool $typed)
-    {
+    /**
+     * @param Parser $parser
+     * @param bool $typed
+     * @param callable $constNameFilter Converts the enum value to a valid class constant name
+     * @param callable $constValueFilter Converts the enum value to a valid method name
+     */
+    public function __construct(
+        Parser $parser,
+        bool $typed,
+        callable $constNameFilter,
+        callable $constValueFilter
+    ) {
         $this->stringFactory = new StringFactory($parser, $typed);
         $this->integerFactory = new IntegerFactory($parser, $typed);
         $this->booleanFactory = new BooleanFactory($parser, $typed);
         $this->numberFactory = new NumberFactory($parser, $typed);
         $this->dateTimeFactory = new DateTimeFactory($parser, $typed);
+        $this->enumFactory = new EnumFactory($parser, $typed, $constNameFilter, $constValueFilter);
     }
 
     /**
@@ -49,6 +62,9 @@ final class ValueObjectFactory
     {
         switch (true) {
             case $typeDefinition instanceof StringType:
+                if ($typeDefinition->enum() !== null) {
+                    return $this->enumFactory->nodeVisitors($typeDefinition);
+                }
                 switch ($typeDefinition->format()) {
                     case TypeDefinition::FORMAT_DATETIME:
                         return $this->dateTimeFactory->nodeVisitors($typeDefinition);
@@ -72,6 +88,9 @@ final class ValueObjectFactory
     {
         switch (true) {
             case $typeDefinition instanceof StringType:
+                if ($typeDefinition->enum() !== null) {
+                    return $this->enumFactory->classBuilder($typeDefinition);
+                }
                 switch ($typeDefinition->format()) {
                     case TypeDefinition::FORMAT_DATETIME:
                         return $this->dateTimeFactory->classBuilder($typeDefinition);
