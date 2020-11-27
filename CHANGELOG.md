@@ -24,6 +24,25 @@ All notable changes to this project will be documented in this file, in reverse 
 
 - Nothing.
 
+## 0.2.1 - 2020-11-20
+
+
+-----
+
+### Release Notes for [0.2.1](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/3)
+
+0.2.x bugfix release (patch)
+
+### 0.2.1
+
+- Total issues resolved: **1**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
+
+#### bug
+
+ - [9: Allow Composer dependency open-code-modeling/json-schema-to-php 0.1.0](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/9) thanks to @sandrokeil
+
 ## 0.2.0 - 2020-11-20
 
 
