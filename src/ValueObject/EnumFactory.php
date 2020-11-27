@@ -275,7 +275,7 @@ final class EnumFactory
 
     private function throwExceptionLine(string $argumentName): string
     {
-        $name = ($this->constValueFilter)($argumentName);
+        $name = \ucfirst(($this->constValueFilter)($argumentName));
 
         return 'throw Invalid' . $name . '::for' . $name . '($' . $argumentName . ');';
     }
@@ -362,7 +362,7 @@ PHP;
     public function methodEnumNamedConstructor(string $enumValue): MethodGenerator
     {
         $method = new MethodGenerator(
-            \lcfirst(($this->constValueFilter)($enumValue)),
+            ($this->constValueFilter)($enumValue),
             [],
             MethodGenerator::FLAG_PUBLIC | MethodGenerator::FLAG_STATIC,
             new BodyGenerator($this->parser, \sprintf('return new self(self::%s);', ($this->constNameFilter)($enumValue)))

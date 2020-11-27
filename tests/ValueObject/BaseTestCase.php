@@ -45,6 +45,7 @@ abstract class BaseTestCase extends TestCase
         $filterConstValue->attach(new Filter\Word\SeparatorToSeparator(' ', '-'));
         $filterConstValue->attach(new Filter\Word\UnderscoreToCamelCase());
         $filterConstValue->attach(new Filter\Word\DashToCamelCase());
+        $filterConstValue->attach(function(string $value) { return \lcfirst($value); });
 
         $this->filterConstValue = $filterConstValue;
 
