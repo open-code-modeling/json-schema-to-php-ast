@@ -1,0 +1,12 @@
+{
+    "type": "array",
+    "items": {
+        "$ref": "#/definitions/reasonType"
+    },
+    "definitions": {
+        "reasonType": {
+            "type": "string",
+            "enum": ["not_interested", "invalid"]
+        }
+    }
+}
