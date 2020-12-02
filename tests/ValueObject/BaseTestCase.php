@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\ValueObject;
 
 use Laminas\Filter;
+use OpenCodeModeling\Filter\FilterFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObjectFactory;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
@@ -21,6 +22,21 @@ abstract class BaseTestCase extends TestCase
     /**
      * @var callable
      */
+    protected $classNameFilter;
+
+    /**
+     * @var callable
+     */
+    protected $propertyNameFilter;
+
+    /**
+     * @var callable
+     */
+    protected $methodNameFilter;
+
+    /**
+     * @var callable
+     */
     protected $filterConstName;
 
     /**
@@ -33,25 +49,18 @@ abstract class BaseTestCase extends TestCase
         $this->parser = (new ParserFactory())->create(ParserFactory::ONLY_PHP7);
         $this->printer = new Standard(['shortArraySyntax' => true]);
 
-        $filterConstName = new Filter\FilterChain();
-        $filterConstName->attach(new Filter\Word\SeparatorToSeparator(' ', ''));
-        $filterConstName->attach(new Filter\Word\CamelCaseToUnderscore());
-        $filterConstName->attach(new Filter\Word\DashToUnderscore());
-        $filterConstName->attach(new Filter\StringToUpper());
-
-        $this->filterConstName = $filterConstName;
-
-        $filterConstValue = new Filter\FilterChain();
-        $filterConstValue->attach(new Filter\Word\SeparatorToSeparator(' ', '-'));
-        $filterConstValue->attach(new Filter\Word\UnderscoreToCamelCase());
-        $filterConstValue->attach(new Filter\Word\DashToCamelCase());
-        $filterConstValue->attach(function(string $value) { return \lcfirst($value); });
-
-        $this->filterConstValue = $filterConstValue;
+        $this->classNameFilter = FilterFactory::classNameFilter();
+        $this->filterConstName = FilterFactory::constantNameFilter();
+        $this->filterConstValue = FilterFactory::constantValueFilter();
+        $this->propertyNameFilter = FilterFactory::propertyNameFilter();
+        $this->methodNameFilter = FilterFactory::methodNameFilter();
 
         $this->voFactory = new ValueObjectFactory(
             $this->parser,
             true,
+            $this->classNameFilter,
+            $this->propertyNameFilter,
+            $this->methodNameFilter,
             $this->filterConstName,
             $this->filterConstValue,
         );

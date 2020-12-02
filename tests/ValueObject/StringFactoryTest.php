@@ -16,7 +16,7 @@ final class StringFactoryTest extends BaseTestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->stringFactory = new StringFactory($this->parser, true);
+        $this->stringFactory = new StringFactory($this->parser, true, $this->propertyNameFilter);
     }
 
     /**

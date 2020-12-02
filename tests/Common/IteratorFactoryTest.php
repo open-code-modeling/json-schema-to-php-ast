@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\Common;
 
-use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
-use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
-use OpenCodeModeling\JsonSchemaToPhp\Type\Type;
 use OpenCodeModeling\JsonSchemaToPhpAst\Common\IteratorFactory;
 use OpenCodeModelingTest\JsonSchemaToPhpAst\ValueObject\BaseTestCase;
 use PhpParser\NodeTraverser;
@@ -19,7 +16,7 @@ final class IteratorFactoryTest extends BaseTestCase
     public function setUp() : void
     {
         parent::setUp();
-        $this->iteratorFactory = new IteratorFactory($this->parser, true);
+        $this->iteratorFactory = new IteratorFactory($this->parser, true, $this->propertyNameFilter);
     }
 
     /**

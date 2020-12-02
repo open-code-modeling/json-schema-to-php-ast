@@ -11,6 +11,7 @@ declare(strict_types=1);
 namespace OpenCodeModeling\JsonSchemaToPhpAst\ValueObject;
 
 use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
+use OpenCodeModeling\CodeAst\Builder\ClassMethodBuilder;
 use OpenCodeModeling\CodeAst\Code\BodyGenerator;
 use OpenCodeModeling\CodeAst\Code\MethodGenerator;
 use OpenCodeModeling\CodeAst\Code\ParameterGenerator;
@@ -21,7 +22,6 @@ use OpenCodeModeling\JsonSchemaToPhp\Type\ScalarType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeSet;
 use OpenCodeModeling\JsonSchemaToPhpAst\Common\IteratorFactory;
-use OpenCodeModeling\JsonSchemaToPhpAst\PropertyFactory;
 use PhpParser\NodeVisitor;
 use PhpParser\Parser;
 
@@ -33,7 +33,6 @@ use PhpParser\Parser;
 final class ArrayFactory
 {
     private Parser $parser;
-    private PropertyFactory $propertyFactory;
     private IteratorFactory $iteratorFactory;
     private bool $typed;
     /**
@@ -58,8 +57,7 @@ final class ArrayFactory
         $this->typed = $typed;
         $this->classNameFilter = $classNameFilter;
         $this->propertyNameFilter = $propertyNameFilter;
-        $this->propertyFactory = new PropertyFactory($typed);
-        $this->iteratorFactory = new IteratorFactory($parser, $typed);
+        $this->iteratorFactory = new IteratorFactory($parser, $typed, $propertyNameFilter);
     }
 
     /**
@@ -158,6 +156,22 @@ final class ArrayFactory
         $classBuilder = $this->iteratorFactory->classBuilderFromNative(
             ($this->propertyNameFilter)($name),
             ($this->classNameFilter)($typeName)
+        );
+        $classBuilder->addMethod(
+            ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodFromItems($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodEmptyList()->generate()),
+            ClassMethodBuilder::fromNode($this->methodMagicConstruct($name, $name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodAdd($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodRemove($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodFirst($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodLast($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodContains($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodFilter($name)->generate()),
+            ClassMethodBuilder::fromNode($this->methodItems($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodToArray($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodEquals()->generate()),
         );
 
         return $classBuilder;

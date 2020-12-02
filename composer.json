@@ -33,12 +33,13 @@
     },
     "require": {
         "php": "^7.4 || ^8.0",
-        "open-code-modeling/json-schema-to-php": "^0.1.0 || dev-master",
-        "open-code-modeling/php-code-ast": "^0.8.6 || dev-master"
+        "open-code-modeling/json-schema-to-php": "0.2.x-dev",
+        "open-code-modeling/php-code-ast": "0.9.x-dev"
     },
     "require-dev": {
         "jangregor/phpstan-prophecy": "^0.8.0",
         "laminas/laminas-filter": "^2.9",
+        "open-code-modeling/php-filter": "^0.1.1",
         "phpspec/prophecy-phpunit": "^2.0",
         "phpstan/phpstan": "^0.12.33",
         "phpstan/phpstan-strict-rules": "^0.12.4",
@@ -46,6 +47,9 @@
         "prooph/php-cs-fixer-config": "^0.3",
         "roave/security-advisories": "dev-master",
         "squizlabs/php_codesniffer": "^3.4"
+    },
+    "suggest": {
+        "open-code-modeling/php-filter": "For pre-configured filters for proper class / method / property names etc."
     },
     "minimum-stability": "dev",
     "prefer-stable": true,

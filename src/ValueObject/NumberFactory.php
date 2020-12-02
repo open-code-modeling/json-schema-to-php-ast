@@ -62,11 +62,17 @@ final class NumberFactory
     private PropertyFactory $propertyFactory;
     private bool $typed;
 
-    public function __construct(Parser $parser, bool $typed)
+    /**
+     * @var callable
+     */
+    private $propertyNameFilter;
+
+    public function __construct(Parser $parser, bool $typed, callable $propertyNameFilter)
     {
         $this->parser = $parser;
         $this->typed = $typed;
-        $this->propertyFactory = new PropertyFactory($typed);
+        $this->propertyNameFilter = $propertyNameFilter;
+        $this->propertyFactory = new PropertyFactory($typed, $propertyNameFilter);
     }
 
     /**
@@ -117,6 +123,8 @@ final class NumberFactory
 
     public function methodFromFloat(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             'fromFloat',
             [
@@ -133,6 +141,8 @@ final class NumberFactory
 
     public function methodMagicConstruct(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             '__construct',
             [
@@ -146,13 +156,15 @@ final class NumberFactory
         return $method;
     }
 
-    public function methodToFloat(string $argumentName): MethodGenerator
+    public function methodToFloat(string $propertyName): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+
         $method = new MethodGenerator(
             'toFloat',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return $this->' . $argumentName . ';')
+            new BodyGenerator($this->parser, 'return $this->' . $propertyName . ';')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('float');
@@ -162,6 +174,9 @@ final class NumberFactory
 
     public function methodEquals(string $propertyName, string $argumentName = 'other'): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $body = <<<PHP
     if(!\$$argumentName instanceof self) {
        return false;
@@ -184,13 +199,15 @@ PHP;
         return $method;
     }
 
-    public function methodMagicToString(string $argumentName): MethodGenerator
+    public function methodMagicToString(string $propertyName): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+
         $method = new MethodGenerator(
             '__toString',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return (string)$this->' . $argumentName . ';')
+            new BodyGenerator($this->parser, 'return (string)$this->' . $propertyName . ';')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('string');

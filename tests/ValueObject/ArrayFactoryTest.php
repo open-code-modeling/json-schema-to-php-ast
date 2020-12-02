@@ -20,8 +20,8 @@ final class ArrayFactoryTest extends BaseTestCase
         $this->arrayFactory = new ArrayFactory(
             $this->parser,
             true,
-            function(string $value) { return \ucfirst(($this->filterConstValue)($value)); },
-            $this->filterConstValue
+            $this->classNameFilter,
+            $this->propertyNameFilter
         );
     }
 
@@ -30,7 +30,21 @@ final class ArrayFactoryTest extends BaseTestCase
      */
     public function it_generates_code_from_native(): void
     {
-        $this->assertCode($this->arrayFactory->nodeVisitorsFromNative('items'));
+        $definition = json_decode(
+            file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
+            true
+        );
+
+        $typeSet = Type::fromDefinition($definition);
+
+        /** @var ArrayType $type */
+        $type = $typeSet->first();
+
+        $this->assertInstanceOf(ArrayType::class, $type);
+
+        $this->assertCode(
+            $this->arrayFactory->nodeVisitorsFromNative('items', ...$type->items())
+        );
     }
 
     /**
@@ -42,7 +56,15 @@ final class ArrayFactoryTest extends BaseTestCase
             file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
             true
         );
-        $this->assertCode($this->arrayFactory->nodeVisitors(Type::fromDefinition($definition)->first()));
+
+        $typeSet = Type::fromDefinition($definition);
+
+        /** @var ArrayType $type */
+        $type = $typeSet->first();
+
+        $this->assertInstanceOf(ArrayType::class, $type);
+
+        $this->assertCode($this->arrayFactory->nodeVisitors($type));
     }
 
     /**

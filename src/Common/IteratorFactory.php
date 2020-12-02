@@ -31,11 +31,17 @@ final class IteratorFactory
     private PropertyFactory $propertyFactory;
     private bool $typed;
 
-    public function __construct(Parser $parser, bool $typed)
+    /**
+     * @var callable
+     */
+    private $propertyNameFilter;
+
+    public function __construct(Parser $parser, bool $typed, callable $propertyNameFilter)
     {
         $this->parser = $parser;
         $this->typed = $typed;
-        $this->propertyFactory = new PropertyFactory($typed);
+        $this->propertyNameFilter = $propertyNameFilter;
+        $this->propertyFactory = new PropertyFactory($typed, $propertyNameFilter);
     }
 
     /**
@@ -90,6 +96,8 @@ final class IteratorFactory
 
     public function methodRewind(string $positionPropertyName): MethodGenerator
     {
+        $positionPropertyName = ($this->propertyNameFilter)($positionPropertyName);
+
         $method = new MethodGenerator(
             'rewind',
             [],
@@ -104,6 +112,8 @@ final class IteratorFactory
 
     public function methodCurrent(string $name, string $itemType, string $positionPropertyName): MethodGenerator
     {
+        $positionPropertyName = ($this->propertyNameFilter)($positionPropertyName);
+
         $method = new MethodGenerator(
             'current',
             [],
@@ -118,6 +128,8 @@ final class IteratorFactory
 
     public function methodKey(string $positionPropertyName): MethodGenerator
     {
+        $positionPropertyName = ($this->propertyNameFilter)($positionPropertyName);
+
         $method = new MethodGenerator(
             'key',
             [],
@@ -132,6 +144,8 @@ final class IteratorFactory
 
     public function methodNext(string $positionPropertyName): MethodGenerator
     {
+        $positionPropertyName = ($this->propertyNameFilter)($positionPropertyName);
+
         $method = new MethodGenerator(
             'next',
             [],
@@ -146,6 +160,8 @@ final class IteratorFactory
 
     public function methodValid(string $name, string $positionPropertyName): MethodGenerator
     {
+        $positionPropertyName = ($this->propertyNameFilter)($positionPropertyName);
+
         $method = new MethodGenerator(
             'valid',
             [],
@@ -161,13 +177,15 @@ final class IteratorFactory
         return $method;
     }
 
-    public function methodCount(string $name): MethodGenerator
+    public function methodCount(string $propertyName): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+
         $method = new MethodGenerator(
             'count',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return count($this->' . $name . ');')
+            new BodyGenerator($this->parser, 'return count($this->' . $propertyName . ');')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('int');

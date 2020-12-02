@@ -102,6 +102,16 @@ final class EnumFactory
     /**
      * @var callable
      */
+    private $propertyNameFilter;
+
+    /**
+     * @var callable
+     */
+    private $methodNameFilter;
+
+    /**
+     * @var callable
+     */
     private $constNameFilter;
 
     /**
@@ -112,16 +122,26 @@ final class EnumFactory
     /**
      * @param Parser $parser
      * @param bool $typed
-     * @param callable $constNameFilter Converts the enum value to a valid class constant name
-     * @param callable $constValueFilter Converts the enum value to a valid method name
+     * @param callable $propertyNameFilter Converts the name to a proper class property name
+     * @param callable $methodNameFilter Converts the name to a proper class method name
+     * @param callable $constNameFilter Converts the name to a proper class constant name
+     * @param callable $constValueFilter Converts the name to a proper class constant value
      */
-    public function __construct(Parser $parser, bool $typed, callable $constNameFilter, callable $constValueFilter)
-    {
+    public function __construct(
+        Parser $parser,
+        bool $typed,
+        callable $propertyNameFilter,
+        callable $methodNameFilter,
+        callable $constNameFilter,
+        callable $constValueFilter
+    ) {
         $this->parser = $parser;
         $this->typed = $typed;
+        $this->propertyNameFilter = $propertyNameFilter;
+        $this->methodNameFilter = $methodNameFilter;
         $this->constNameFilter = $constNameFilter;
         $this->constValueFilter = $constValueFilter;
-        $this->propertyFactory = new PropertyFactory($typed);
+        $this->propertyFactory = new PropertyFactory($typed, $propertyNameFilter);
     }
 
     /**
@@ -259,6 +279,8 @@ final class EnumFactory
 
     public function methodFromString(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             'fromString',
             [
@@ -275,6 +297,8 @@ final class EnumFactory
 
     private function throwExceptionLine(string $argumentName): string
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $name = \ucfirst(($this->constValueFilter)($argumentName));
 
         return 'throw Invalid' . $name . '::for' . $name . '($' . $argumentName . ');';
@@ -282,6 +306,8 @@ final class EnumFactory
 
     public function methodMagicConstruct(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $exceptionLine = $this->throwExceptionLine($argumentName);
 
         $body = <<<PHP
@@ -305,13 +331,15 @@ PHP;
         return $method;
     }
 
-    public function methodToString(string $argumentName): MethodGenerator
+    public function methodToString(string $propertyName): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+
         $method = new MethodGenerator(
             'toString',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return $this->' . $argumentName . ';')
+            new BodyGenerator($this->parser, 'return $this->' . $propertyName . ';')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('string');
@@ -321,6 +349,9 @@ PHP;
 
     public function methodEquals(string $propertyName, string $argumentName = 'other'): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $body = <<<PHP
     if(!\$$argumentName instanceof self) {
        return false;
@@ -345,13 +376,15 @@ PHP;
         return $method;
     }
 
-    public function methodMagicToString(string $argumentName): MethodGenerator
+    public function methodMagicToString(string $propertyName): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+
         $method = new MethodGenerator(
             '__toString',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return $this->' . $argumentName . ';')
+            new BodyGenerator($this->parser, 'return $this->' . $propertyName . ';')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('string');
@@ -362,7 +395,7 @@ PHP;
     public function methodEnumNamedConstructor(string $enumValue): MethodGenerator
     {
         $method = new MethodGenerator(
-            ($this->constValueFilter)($enumValue),
+            ($this->methodNameFilter)($enumValue),
             [],
             MethodGenerator::FLAG_PUBLIC | MethodGenerator::FLAG_STATIC,
             new BodyGenerator($this->parser, \sprintf('return new self(self::%s);', ($this->constNameFilter)($enumValue)))
@@ -375,6 +408,8 @@ PHP;
 
     public function methodIsOneOf(string $argumentName, ?string $className): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $other = '$other' . \ucfirst($argumentName);
 
         $body = <<<PHP
