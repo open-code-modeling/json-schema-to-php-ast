@@ -116,6 +116,8 @@ final class ClassGeneratorTest extends TestCase
 
         $this->assertCount(7, $classBuilderCollection);
 
+        $this->classGenerator->addGetterMethods($classBuilderCollection, true, FilterFactory::methodNameFilter());
+
         $files = $this->classGenerator->generateFiles($classBuilderCollection, $this->parser, $this->printer);
 
         $this->assertCount(7, $files);
@@ -310,6 +312,14 @@ final class Order
 {
     private Address $billingAddress;
     private ShippingAddresses $shippingAddresses;
+    public function billingAddress() : Address
+    {
+        return $this->billingAddress;
+    }
+    public function shippingAddresses() : ShippingAddresses
+    {
+        return $this->shippingAddresses;
+    }
 }
 PHP;
         $this->assertSame($expected, $code);
@@ -460,6 +470,18 @@ final class Address
     private StreetAddress $streetAddress;
     private City $city;
     private State $federalState;
+    public function streetAddress() : StreetAddress
+    {
+        return $this->streetAddress;
+    }
+    public function city() : City
+    {
+        return $this->city;
+    }
+    public function federalState() : State
+    {
+        return $this->federalState;
+    }
 }
 PHP;
         $this->assertSame($expected, $code);
@@ -481,6 +503,18 @@ final class BillingAddress
     private StreetAddress $streetAddress;
     private City $city;
     private State $federalState;
+    public function streetAddress() : StreetAddress
+    {
+        return $this->streetAddress;
+    }
+    public function city() : City
+    {
+        return $this->city;
+    }
+    public function federalState() : State
+    {
+        return $this->federalState;
+    }
 }
 PHP;
         $this->assertSame($expected, $code);

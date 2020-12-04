@@ -12,6 +12,7 @@ namespace OpenCodeModeling\JsonSchemaToPhpAst;
 
 use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassBuilderCollection;
+use OpenCodeModeling\CodeAst\Builder\ClassMethodBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassPropertyBuilder;
 use OpenCodeModeling\CodeAst\Package\ClassInfoList;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
@@ -39,23 +40,16 @@ final class ClassGenerator
      */
     private $propertyNameFilter;
 
-    /**
-     * @var callable
-     */
-    private $methodNameFilter;
-
     public function __construct(
         ClassInfoList $classInfoList,
         ValueObjectFactory $valueObjectFactory,
         callable $classNameFilter,
-        callable $propertyNameFilter,
-        callable $methodNameFilter
+        callable $propertyNameFilter
     ) {
         $this->classInfoList = $classInfoList;
         $this->valueObjectFactory = $valueObjectFactory;
         $this->classNameFilter = $classNameFilter;
         $this->propertyNameFilter = $propertyNameFilter;
-        $this->methodNameFilter = $methodNameFilter;
     }
 
     /**
@@ -172,6 +166,34 @@ final class ClassGenerator
         }
     }
 
+    /**
+     * @param ClassBuilderCollection $classBuilderCollection
+     * @param bool $typed
+     * @param callable $methodNameFilter Filter the property name to your desired method name e.g. with get prefix
+     */
+    public function addGetterMethods(
+        ClassBuilderCollection $classBuilderCollection,
+        bool $typed,
+        callable $methodNameFilter
+    ): void {
+        foreach ($classBuilderCollection as $classBuilder) {
+            foreach ($classBuilder->getProperties() as $classPropertyBuilder) {
+                $methodName = ($methodNameFilter)($classPropertyBuilder->getName());
+
+                if ($this->isValueObject($classBuilder)
+                    || $classBuilder->hasMethod($methodName)) {
+                    continue 2;
+                }
+                $classBuilder->addMethod(
+                    ClassMethodBuilder::fromScratch($methodName, $typed)
+                        ->setReturnType($classPropertyBuilder->getType())
+                        ->setReturnTypeDocBlockHint($classPropertyBuilder->getTypeDocBlockHint())
+                        ->setBody('return $this->' . $classPropertyBuilder->getName() . ';')
+                );
+            }
+        }
+    }
+
     public function generateValueObject(string $className, string $classNamespace, TypeDefinition $definition): ClassBuilder
     {
         $classBuilder = $this->valueObjectFactory->classBuilder($definition);
@@ -204,6 +226,7 @@ final class ClassGenerator
                 $classInfo = $this->classInfoList->classInfoForNamespace($previousNamespace);
                 $path = $classInfo->getPath($classBuilder->getNamespace() . '\\' . $classBuilder->getName());
             }
+            // @phpstan-ignore-next-line
             $filename = $classInfo->getFilenameFromPathAndName($path, $classBuilder->getName());
 
             $nodeTraverser = new NodeTraverser();
@@ -238,5 +261,14 @@ final class ClassGenerator
             default:
                 break;
         }
+    }
+
+    private function isValueObject(ClassBuilder $classBuilder): bool
+    {
+        return $classBuilder->hasMethod('fromItems')
+            || $classBuilder->hasMethod('toString')
+            || $classBuilder->hasMethod('toInt')
+            || $classBuilder->hasMethod('toFloat')
+            || $classBuilder->hasMethod('toBool');
     }
 }
