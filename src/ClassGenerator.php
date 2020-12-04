@@ -12,8 +12,10 @@ namespace OpenCodeModeling\JsonSchemaToPhpAst;
 
 use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassBuilderCollection;
+use OpenCodeModeling\CodeAst\Builder\ClassConstBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassMethodBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassPropertyBuilder;
+use OpenCodeModeling\CodeAst\Code\ClassConstGenerator;
 use OpenCodeModeling\CodeAst\Package\ClassInfoList;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ObjectType;
@@ -167,6 +169,8 @@ final class ClassGenerator
     }
 
     /**
+     * Generation of getter methods for value object are skipped.
+     *
      * @param ClassBuilderCollection $classBuilderCollection
      * @param bool $typed
      * @param callable $methodNameFilter Filter the property name to your desired method name e.g. with get prefix
@@ -189,6 +193,39 @@ final class ClassGenerator
                         ->setReturnType($classPropertyBuilder->getType())
                         ->setReturnTypeDocBlockHint($classPropertyBuilder->getTypeDocBlockHint())
                         ->setBody('return $this->' . $classPropertyBuilder->getName() . ';')
+                );
+            }
+        }
+    }
+
+    /**
+     * Generation of constants for value object are skipped.
+     *
+     * @param ClassBuilderCollection $classBuilderCollection
+     * @param callable $constantNameFilter Converts the name to a proper class constant name
+     * @param callable $constantValueFilter Converts the name to a proper class constant value e.g. snake_case or camelCase
+     * @param int $visibility Visibility of the class constant
+     */
+    public function addClassConstantsForProperties(
+        ClassBuilderCollection $classBuilderCollection,
+        callable $constantNameFilter,
+        callable $constantValueFilter,
+        int $visibility = ClassConstGenerator::FLAG_PUBLIC
+    ): void {
+        foreach ($classBuilderCollection as $classBuilder) {
+            foreach ($classBuilder->getProperties() as $classPropertyBuilder) {
+                $constantName = ($constantNameFilter)($classPropertyBuilder->getName());
+
+                if ($this->isValueObject($classBuilder)
+                    || $classBuilder->hasConstant($constantName)) {
+                    continue 2;
+                }
+                $classBuilder->addConstant(
+                    ClassConstBuilder::fromScratch(
+                        $constantName,
+                        ($constantValueFilter)($classPropertyBuilder->getName()),
+                        $visibility
+                    )
                 );
             }
         }

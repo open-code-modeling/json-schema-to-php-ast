@@ -117,6 +117,11 @@ final class ClassGeneratorTest extends TestCase
         $this->assertCount(7, $classBuilderCollection);
 
         $this->classGenerator->addGetterMethods($classBuilderCollection, true, FilterFactory::methodNameFilter());
+        $this->classGenerator->addClassConstantsForProperties(
+            $classBuilderCollection,
+            FilterFactory::constantNameFilter(),
+            FilterFactory::constantValueFilter()
+        );
 
         $files = $this->classGenerator->generateFiles($classBuilderCollection, $this->parser, $this->printer);
 
@@ -310,6 +315,8 @@ use Acme\Address;
 use Acme\ShippingAddresses;
 final class Order
 {
+    public const BILLING_ADDRESS = 'billing_address';
+    public const SHIPPING_ADDRESSES = 'shipping_addresses';
     private Address $billingAddress;
     private ShippingAddresses $shippingAddresses;
     public function billingAddress() : Address
@@ -467,6 +474,9 @@ use Acme\City;
 use Acme\State;
 final class Address
 {
+    public const STREET_ADDRESS = 'street_address';
+    public const CITY = 'city';
+    public const FEDERAL_STATE = 'federal_state';
     private StreetAddress $streetAddress;
     private City $city;
     private State $federalState;
@@ -500,6 +510,9 @@ use Acme\City;
 use Acme\State;
 final class BillingAddress
 {
+    public const STREET_ADDRESS = 'street_address';
+    public const CITY = 'city';
+    public const FEDERAL_STATE = 'federal_state';
     private StreetAddress $streetAddress;
     private City $city;
     private State $federalState;
