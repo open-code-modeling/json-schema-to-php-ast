@@ -62,11 +62,17 @@ final class BooleanFactory
     private PropertyFactory $propertyFactory;
     private bool $typed;
 
-    public function __construct(Parser $parser, bool $typed)
+    /**
+     * @var callable
+     */
+    private $propertyNameFilter;
+
+    public function __construct(Parser $parser, bool $typed, callable $propertyNameFilter)
     {
         $this->parser = $parser;
         $this->typed = $typed;
-        $this->propertyFactory = new PropertyFactory($typed);
+        $this->propertyNameFilter = $propertyNameFilter;
+        $this->propertyFactory = new PropertyFactory($typed, $propertyNameFilter);
     }
 
     /**
@@ -117,6 +123,8 @@ final class BooleanFactory
 
     public function methodFromBool(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             'fromBool',
             [
@@ -133,6 +141,8 @@ final class BooleanFactory
 
     public function methodMagicConstruct(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             '__construct',
             [
@@ -148,6 +158,8 @@ final class BooleanFactory
 
     public function methodToBool(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             'toBool',
             [],
@@ -162,6 +174,9 @@ final class BooleanFactory
 
     public function methodEquals(string $propertyName, string $argumentName = 'other'): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $body = <<<PHP
     if(!\$$argumentName instanceof self) {
        return false;
@@ -186,6 +201,8 @@ PHP;
 
     public function methodMagicToString(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             '__toString',
             [],

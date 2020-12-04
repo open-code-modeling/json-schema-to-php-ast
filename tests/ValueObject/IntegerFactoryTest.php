@@ -16,7 +16,7 @@ final class IntegerFactoryTest extends BaseTestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->integerFactory = new IntegerFactory($this->parser, true);
+        $this->integerFactory = new IntegerFactory($this->parser, true, $this->propertyNameFilter);
     }
 
     /**

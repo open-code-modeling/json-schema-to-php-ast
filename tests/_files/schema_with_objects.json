@@ -1,0 +1,44 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "address": {
+            "type": "object",
+            "properties": {
+                "street_address": {
+                    "type": "string"
+                },
+                "city": {
+                    "type": "string"
+                },
+                "federal_state": {
+                    "$ref": "#/definitions/state"
+                }
+
+            },
+            "required": [
+                "street_address",
+                "city",
+                "federal_state"
+            ]
+        },
+        "state": {
+            "type": "string",
+            "enum": ["NY", "DC"]
+        }
+    },
+    "type": "object",
+    "properties": {
+        "billing_address": {
+            "$ref": "#/definitions/address"
+        },
+        "shipping_addresses": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/address"
+            }
+        }
+    },
+    "required": [
+        "billing_address"
+    ]
+}

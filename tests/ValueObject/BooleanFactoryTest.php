@@ -16,7 +16,7 @@ final class BooleanFactoryTest extends BaseTestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->integerFactory = new BooleanFactory($this->parser, true);
+        $this->integerFactory = new BooleanFactory($this->parser, true, $this->propertyNameFilter);
     }
 
     /**

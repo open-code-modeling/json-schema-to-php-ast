@@ -20,7 +20,14 @@ final class EnumFactoryTest extends BaseTestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->enumFactory = new EnumFactory($this->parser, true, $this->filterConstName, $this->filterConstValue);
+        $this->enumFactory = new EnumFactory(
+            $this->parser,
+            true,
+            $this->propertyNameFilter,
+            $this->methodNameFilter,
+            $this->filterConstName,
+            $this->filterConstValue
+        );
     }
 
     /**

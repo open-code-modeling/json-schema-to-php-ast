@@ -25,9 +25,15 @@ final class PropertyFactory
      **/
     private $typed;
 
-    public function __construct(bool $typed)
+    /**
+     * @var callable
+     */
+    private $propertyNameFilter;
+
+    public function __construct(bool $typed, callable $propertyNameFilter)
     {
         $this->typed = $typed;
+        $this->propertyNameFilter = $propertyNameFilter;
     }
 
     /**
@@ -100,7 +106,7 @@ final class PropertyFactory
 
     public function propertyGenerator(string $name, string $type): PropertyGenerator
     {
-        return new PropertyGenerator($name, $type, null, $this->typed);
+        return new PropertyGenerator(($this->propertyNameFilter)($name), $type, null, $this->typed);
     }
 
     /**

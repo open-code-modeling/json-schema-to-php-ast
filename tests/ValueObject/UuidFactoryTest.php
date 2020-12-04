@@ -16,7 +16,7 @@ final class UuidFactoryTest extends BaseTestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->uuidFactory = new UuidFactory($this->parser, true);
+        $this->uuidFactory = new UuidFactory($this->parser, true, $this->propertyNameFilter);
     }
 
     /**

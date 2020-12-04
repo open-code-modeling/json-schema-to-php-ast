@@ -11,11 +11,13 @@ declare(strict_types=1);
 namespace OpenCodeModeling\JsonSchemaToPhpAst;
 
 use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
+use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\BooleanType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\IntegerType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\NumberType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
+use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\ArrayFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\BooleanFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\DateTimeFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\EnumFactory;
@@ -35,26 +37,34 @@ final class ValueObjectFactory
     private DateTimeFactory $dateTimeFactory;
     private EnumFactory $enumFactory;
     private UuidFactory $uuidFactory;
+    private ArrayFactory $arrayFactory;
 
     /**
      * @param Parser $parser
      * @param bool $typed
-     * @param callable $constNameFilter Converts the enum value to a valid class constant name
-     * @param callable $constValueFilter Converts the enum value to a valid method name
+     * @param callable $classNameFilter Converts the name of the type to a proper class name
+     * @param callable $propertyNameFilter Converts the name to a proper class property name
+     * @param callable $methodNameFilter Converts the name to a proper class method name
+     * @param callable $constNameFilter Converts the name to a proper class constant name
+     * @param callable $constValueFilter Converts the name to a proper class constant value
      */
     public function __construct(
         Parser $parser,
         bool $typed,
+        callable $classNameFilter,
+        callable $propertyNameFilter,
+        callable $methodNameFilter,
         callable $constNameFilter,
         callable $constValueFilter
     ) {
-        $this->stringFactory = new StringFactory($parser, $typed);
-        $this->integerFactory = new IntegerFactory($parser, $typed);
-        $this->booleanFactory = new BooleanFactory($parser, $typed);
-        $this->numberFactory = new NumberFactory($parser, $typed);
-        $this->dateTimeFactory = new DateTimeFactory($parser, $typed);
-        $this->enumFactory = new EnumFactory($parser, $typed, $constNameFilter, $constValueFilter);
-        $this->uuidFactory = new UuidFactory($parser, $typed);
+        $this->stringFactory = new StringFactory($parser, $typed, $propertyNameFilter);
+        $this->integerFactory = new IntegerFactory($parser, $typed, $propertyNameFilter);
+        $this->booleanFactory = new BooleanFactory($parser, $typed, $propertyNameFilter);
+        $this->numberFactory = new NumberFactory($parser, $typed, $propertyNameFilter);
+        $this->dateTimeFactory = new DateTimeFactory($parser, $typed, $propertyNameFilter);
+        $this->enumFactory = new EnumFactory($parser, $typed, $propertyNameFilter, $methodNameFilter, $constNameFilter, $constValueFilter);
+        $this->uuidFactory = new UuidFactory($parser, $typed, $propertyNameFilter);
+        $this->arrayFactory = new ArrayFactory($parser, $typed, $classNameFilter, $propertyNameFilter);
     }
 
     /**
@@ -83,9 +93,10 @@ final class ValueObjectFactory
                 return $this->booleanFactory->nodeVisitors($typeDefinition);
             case $typeDefinition instanceof NumberType:
                 return $this->numberFactory->nodeVisitors($typeDefinition);
+            case $typeDefinition instanceof ArrayType:
+                return $this->arrayFactory->nodeVisitors($typeDefinition);
             default:
-                // TODO throw exception
-                return [];
+                throw new \RuntimeException(\sprintf('Type "%s" not supported', \get_class($typeDefinition)));
         }
     }
 
@@ -111,6 +122,8 @@ final class ValueObjectFactory
                 return $this->booleanFactory->classBuilder($typeDefinition);
             case $typeDefinition instanceof NumberType:
                 return $this->numberFactory->classBuilder($typeDefinition);
+            case $typeDefinition instanceof ArrayType:
+                return $this->arrayFactory->classBuilder($typeDefinition);
             default:
                 throw new \RuntimeException(\sprintf('Type "%s" not supported', \get_class($typeDefinition)));
         }

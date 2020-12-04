@@ -90,11 +90,17 @@ final class DateTimeFactory
     private PropertyFactory $propertyFactory;
     private bool $typed;
 
-    public function __construct(Parser $parser, bool $typed)
+    /**
+     * @var callable
+     */
+    private $propertyNameFilter;
+
+    public function __construct(Parser $parser, bool $typed, callable $propertyNameFilter)
     {
         $this->parser = $parser;
         $this->typed = $typed;
-        $this->propertyFactory = new PropertyFactory($typed);
+        $this->propertyNameFilter = $propertyNameFilter;
+        $this->propertyFactory = new PropertyFactory($typed, $propertyNameFilter);
     }
 
     /**
@@ -173,6 +179,8 @@ final class DateTimeFactory
 
     public function methodFromDateTime(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             'fromDateTime',
             [
@@ -189,6 +197,8 @@ final class DateTimeFactory
 
     public function methodFromString(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $body = <<<PHP
     try {
         \$dateTimeImmutable = new DateTimeImmutable(\$$argumentName);
@@ -217,6 +227,8 @@ PHP;
 
     public function methodMagicConstruct(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $method = new MethodGenerator(
             '__construct',
             [
@@ -230,13 +242,15 @@ PHP;
         return $method;
     }
 
-    public function methodToString(string $argumentName): MethodGenerator
+    public function methodToString(string $propertyName): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+
         $method = new MethodGenerator(
             'toString',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return $this->' . $argumentName . '->format(self::OUTPUT_FORMAT);')
+            new BodyGenerator($this->parser, 'return $this->' . $propertyName . '->format(self::OUTPUT_FORMAT);')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('string');
@@ -244,13 +258,15 @@ PHP;
         return $method;
     }
 
-    public function methodDateTime(string $argumentName): MethodGenerator
+    public function methodDateTime(string $propertyName): MethodGenerator
     {
+        $propertyName = ($this->propertyNameFilter)($propertyName);
+
         $method = new MethodGenerator(
             'dateTime',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return $this->' . $argumentName . ';')
+            new BodyGenerator($this->parser, 'return $this->' . $propertyName . ';')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('DateTimeImmutable');
@@ -274,6 +290,8 @@ PHP;
 
     public function methodEnsureUtc(string $argumentName): MethodGenerator
     {
+        $argumentName = ($this->propertyNameFilter)($argumentName);
+
         $body = <<<'PHP'
         if ($argumentName->getTimezone()->getName() !== 'UTC') {
             $argumentName = $argumentName->setTimezone(new \DateTimeZone('UTC'));

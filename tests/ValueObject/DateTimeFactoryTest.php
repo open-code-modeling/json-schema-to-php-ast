@@ -17,7 +17,7 @@ final class DateTimeFactoryTest extends BaseTestCase
     public function setUp(): void
     {
         parent::setUp();
-        $this->dateTimeFactory = new DateTimeFactory($this->parser, true);
+        $this->dateTimeFactory = new DateTimeFactory($this->parser, true, $this->propertyNameFilter);
     }
 
     /**
