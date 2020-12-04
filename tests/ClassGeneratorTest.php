@@ -60,8 +60,7 @@ final class ClassGeneratorTest extends TestCase
             $this->classInfoList,
             $this->valueObjectFactory,
             FilterFactory::classNameFilter(),
-            FilterFactory::propertyNameFilter(),
-            FilterFactory::methodNameFilter(),
+            FilterFactory::propertyNameFilter()
         );
     }
 
