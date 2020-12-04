@@ -29,6 +29,128 @@ use PhpParser\Parser;
  * This file creates node visitors for a value object of type string.
  *
  * The following code will be generated:
+ *
+ *  private int $position = 0;
+ *
+ *  private array $items;
+ *
+ *  public function rewind() : void
+ *  {
+ *      $this->position = 0;
+ *  }
+ *
+ *  public function current() : ReasonType
+ *  {
+ *      return $this->items[$this->position];
+ *  }
+ *
+ *  public function key() : int
+ *  {
+ *      return $this->position;
+ *  }
+ *
+ *  public function next() : void
+ *  {
+ *      ++$this->position;
+ *  }
+ *
+ *  public function valid() : bool
+ *  {
+ *      return isset($this->items[$this->position]);
+ *  }
+ *
+ *  public function count() : int
+ *  {
+ *      return count($this->items);
+ *  }
+ *
+ *  public static function fromArray(array $items) : self
+ *  {
+ *      return new self(...array_map(static function (string $item) {
+ *          return ReasonType::fromString($item);
+ *      }, $items));
+ *  }
+ *
+ *  public static function fromItems(ReasonType ...$items) : self
+ *  {
+ *      return new self(...$items);
+ *  }
+ *
+ *  public static function emptyList() : self
+ *  {
+ *      return new self();
+ *  }
+ *
+ *  private function __construct(ReasonType ...$items)
+ *  {
+ *      $this->items = $items;
+ *  }
+ *
+ *  public function add(ReasonType $reasonType) : self
+ *  {
+ *      $copy = clone $this;
+ *      $copy->items[] = $reasonType;
+ *      return $copy;
+ *  }
+ *
+ *  public function remove(ReasonType $reasonType) : self
+ *  {
+ *      $copy = clone $this;
+ *      $copy->items = array_values(array_filter($copy->items, static function ($v) {
+ *          return !$v->equals($reasonType);
+ *      }));
+ *      return $copy;
+ *  }
+ *
+ *  public function first() : ?ReasonType
+ *  {
+ *      return $this->items[0] ?? null;
+ *  }
+ *
+ *  public function last() : ?ReasonType
+ *  {
+ *      if (count($this->items) === 0) {
+ *          return null;
+ *      }
+ *      return $this->items[count($this->items) - 1];
+ *  }
+ *
+ *  public function contains(ReasonType $reasonType) : bool
+ *  {
+ *      foreach ($this->items as $existingItem) {
+ *          if ($existingItem->equals($reasonType)) {
+ *           *  return true;
+ *          }
+ *      }
+ *      return false;
+ *  }
+ *
+ *  public function filter(callable $filter) : self
+ *  {
+ *      return new self(...array_values(array_filter($this->items, static function ($v) {
+ *          return $filter($v);
+ *      })));
+ *  }
+ *
+ *  public function items() : array
+ *  {
+ *      return $this->items;
+ *  }
+ *
+ *  public function toArray() : array
+ *  {
+ *      return \array_map(static function (ReasonType $reasonType) {
+ *          return $reasonType->toArray();
+ *      }, $this->items);
+ *  }
+ *
+ *  public function equals($other) : bool
+ *  {
+ *      if (!$other instanceof self) {
+ *          return false;
+ *      }
+ *      return $this->toArray() === $other->toArray();
+ *  }
  */
 final class ArrayFactory
 {
