@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @see       https://github.com/open-code-modeling/json-schema-to-php-ast for the canonical source repository
+ * @copyright https://github.com/open-code-modeling/json-schema-to-php-ast/blob/master/COPYRIGHT.md
+ * @license   https://github.com/open-code-modeling/json-schema-to-php-ast/blob/master/LICENSE.md MIT License
+ */
+
 declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\Common;
@@ -13,7 +19,7 @@ final class IteratorFactoryTest extends BaseTestCase
 {
     private IteratorFactory $iteratorFactory;
 
-    public function setUp() : void
+    public function setUp(): void
     {
         parent::setUp();
         $this->iteratorFactory = new IteratorFactory($this->parser, true, $this->propertyNameFilter);
@@ -22,7 +28,7 @@ final class IteratorFactoryTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_generates_code_from_native() : void
+    public function it_generates_code_from_native(): void
     {
         $this->assertCode($this->iteratorFactory->nodeVisitorsFromNative('reasonTypes', 'ReasonType'));
     }
@@ -30,7 +36,7 @@ final class IteratorFactoryTest extends BaseTestCase
     /**
      * @test
      */
-    public function it_generates_code_from_native_with_class_builder() : void
+    public function it_generates_code_from_native_with_class_builder(): void
     {
         $this->assertCode(
             $this->iteratorFactory->classBuilderFromNative('reasonTypes', 'ReasonType')

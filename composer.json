@@ -58,8 +58,8 @@
             "@cs",
             "@test"
         ],
-        "cs": "php-cs-fixer fix src -v --diff --dry-run",
-        "cs-fix": "php-cs-fixer fix src -v --diff",
+        "cs": "php-cs-fixer fix -v --diff --dry-run",
+        "cs-fix": "php-cs-fixer fix -v --diff",
         "test": "vendor/bin/phpunit",
         "analyse": "php vendor/bin/phpstan.phar analyse --no-interaction"
     },

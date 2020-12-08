@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @see       https://github.com/open-code-modeling/json-schema-to-php-ast for the canonical source repository
+ * @copyright https://github.com/open-code-modeling/json-schema-to-php-ast/blob/master/COPYRIGHT.md
+ * @license   https://github.com/open-code-modeling/json-schema-to-php-ast/blob/master/LICENSE.md MIT License
+ */
+
 declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst;
@@ -69,7 +75,7 @@ final class ClassGeneratorTest extends TestCase
      */
     public function it_generates_classes_of_objects(): void
     {
-        $json = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_objects.json');
+        $json = \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_objects.json');
         $decodedJson = \json_decode($json, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
 
         $typeSet = Type::fromDefinition($decodedJson);
@@ -82,8 +88,8 @@ final class ClassGeneratorTest extends TestCase
 
         $this->assertCount(7, $classBuilderCollection);
 
-        $filter = function(string $className) {
-            return function(ClassBuilder $classBuilder) use ($className) {
+        $filter = function (string $className) {
+            return function (ClassBuilder $classBuilder) use ($className) {
                 return $classBuilder->getName() === $className;
             };
         };
@@ -102,7 +108,7 @@ final class ClassGeneratorTest extends TestCase
      */
     public function it_generates_files(): void
     {
-        $json = file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_objects.json');
+        $json = \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_objects.json');
         $decodedJson = \json_decode($json, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
 
         $typeSet = Type::fromDefinition($decodedJson);
@@ -338,7 +344,6 @@ final class Order
 PHP;
         $this->assertSame($expected, $code);
     }
-
 
     private function assertShippingAddressesFile(string $code): void
     {

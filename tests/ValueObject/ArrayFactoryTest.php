@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @see       https://github.com/open-code-modeling/json-schema-to-php-ast for the canonical source repository
+ * @copyright https://github.com/open-code-modeling/json-schema-to-php-ast/blob/master/COPYRIGHT.md
+ * @license   https://github.com/open-code-modeling/json-schema-to-php-ast/blob/master/LICENSE.md MIT License
+ */
+
 declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\ValueObject;
@@ -30,8 +36,8 @@ final class ArrayFactoryTest extends BaseTestCase
      */
     public function it_generates_code_from_native(): void
     {
-        $definition = json_decode(
-            file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
+        $definition = \json_decode(
+            \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
             true
         );
 
@@ -52,8 +58,8 @@ final class ArrayFactoryTest extends BaseTestCase
      */
     public function it_generates_code_from_definition(): void
     {
-        $definition = json_decode(
-            file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
+        $definition = \json_decode(
+            \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
             true
         );
 
@@ -72,8 +78,8 @@ final class ArrayFactoryTest extends BaseTestCase
      */
     public function it_generates_code_via_value_object_factory(): void
     {
-        $definition = json_decode(
-            file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
+        $definition = \json_decode(
+            \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
             true
         );
 
@@ -89,8 +95,8 @@ final class ArrayFactoryTest extends BaseTestCase
      */
     public function it_generates_code_via_value_object_factory_with_class_builder(): void
     {
-        $definition = json_decode(
-            file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
+        $definition = \json_decode(
+            \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_array_type_ref.json'),
             true
         );
 
