@@ -185,6 +185,10 @@ final class ClassGeneratorTest extends TestCase
         $this->assertArrayHasKey('federalState', $properties);
         $this->assertArrayHasKey('streetAddress', $properties);
 
+        $this->assertSame('?City', $properties['city']->getType());
+        $this->assertSame('State', $properties['federalState']->getType());
+        $this->assertSame('StreetAddress', $properties['streetAddress']->getType());
+
         $this->assertCount(3, $classBuilder->getNamespaceImports());
         $this->assertSame(
             ['Acme\\StreetAddress' => 'Acme\\StreetAddress', 'Acme\\City' => 'Acme\\City', 'Acme\\State' => 'Acme\\State'],
@@ -229,6 +233,10 @@ final class ClassGeneratorTest extends TestCase
         $this->assertArrayHasKey('city', $properties);
         $this->assertArrayHasKey('federalState', $properties);
         $this->assertArrayHasKey('streetAddress', $properties);
+
+        $this->assertSame('?City', $properties['city']->getType());
+        $this->assertSame('State', $properties['federalState']->getType());
+        $this->assertSame('StreetAddress', $properties['streetAddress']->getType());
 
         $this->assertCount(3, $classBuilder->getNamespaceImports());
         $this->assertSame(
@@ -477,13 +485,13 @@ final class Address
     public const CITY = 'city';
     public const FEDERAL_STATE = 'federal_state';
     private StreetAddress $streetAddress;
-    private City $city;
+    private ?City $city;
     private State $federalState;
     public function streetAddress() : StreetAddress
     {
         return $this->streetAddress;
     }
-    public function city() : City
+    public function city() : ?City
     {
         return $this->city;
     }
@@ -513,13 +521,13 @@ final class BillingAddress
     public const CITY = 'city';
     public const FEDERAL_STATE = 'federal_state';
     private StreetAddress $streetAddress;
-    private City $city;
+    private ?City $city;
     private State $federalState;
     public function streetAddress() : StreetAddress
     {
         return $this->streetAddress;
     }
-    public function city() : City
+    public function city() : ?City
     {
         return $this->city;
     }

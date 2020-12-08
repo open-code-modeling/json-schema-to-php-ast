@@ -16,6 +16,7 @@ use OpenCodeModeling\CodeAst\Builder\ClassConstBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassMethodBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassPropertyBuilder;
 use OpenCodeModeling\CodeAst\Code\ClassConstGenerator;
+use OpenCodeModeling\CodeAst\Package\ClassInfo;
 use OpenCodeModeling\CodeAst\Package\ClassInfoList;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ObjectType;
@@ -59,7 +60,7 @@ final class ClassGenerator
      * @param ClassBuilderCollection $classBuilderCollection Collection for other classes
      * @param TypeSet $typeSet
      * @param string $srcFolder Source folder for namespace imports
-     * @param string|null $className Class name of other classes
+     * @param string|null $className Class name is used from $classBuilder if not set
      * @return void
      */
     public function generateClasses(
@@ -79,6 +80,7 @@ final class ClassGenerator
         ) {
             $type = $refType->first();
         }
+        $className = $className ?: $classBuilder->getName();
 
         switch (true) {
             case $type instanceof ObjectType:
@@ -117,7 +119,12 @@ final class ClassGenerator
                                 $propertyClassName
                             );
                             $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
-                            $classBuilder->addProperty(ClassPropertyBuilder::fromScratch($propertyPropertyName, $propertyClassName));
+                            $classBuilder->addProperty(
+                                ClassPropertyBuilder::fromScratch(
+                                    $propertyPropertyName,
+                                    $propertyType->isNullable() ? ('?' . $propertyClassName) : $propertyClassName
+                                )
+                            );
                             break;
                         case $propertyType instanceof ReferenceType:
                             if ($propertyRefType = $propertyType->resolvedType()) {
@@ -132,7 +139,10 @@ final class ClassGenerator
                                 $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
                             }
                             $classBuilder->addProperty(
-                                ClassPropertyBuilder::fromScratch($propertyPropertyName, $propertyClassName)
+                                ClassPropertyBuilder::fromScratch(
+                                    $propertyPropertyName,
+                                    $propertyType->isNullable() ? ('?' . $propertyClassName) : $propertyClassName
+                                )
                             );
                             break;
                         case $propertyType instanceof ScalarType:
@@ -143,7 +153,7 @@ final class ClassGenerator
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
                                     $propertyPropertyName,
-                                    $propertyClassName
+                                    $propertyType->isNullable() ? ('?' . $propertyClassName) : $propertyClassName
                                 )
                             );
                             break;
@@ -246,14 +256,22 @@ final class ClassGenerator
      * @param ClassBuilderCollection $classBuilderCollection
      * @param Parser $parser
      * @param PrettyPrinterAbstract $printer
+     * @param callable|null $currentFileAst Callable to return current file AST, if null, file will be overwritten
      * @return array<string, string> List of filename => code
      */
     public function generateFiles(
         ClassBuilderCollection $classBuilderCollection,
         Parser $parser,
-        PrettyPrinterAbstract $printer
+        PrettyPrinterAbstract $printer,
+        callable $currentFileAst = null
     ): array {
         $files = [];
+
+        if ($currentFileAst === null) {
+            $currentFileAst = static function (ClassBuilder $classBuilder, ClassInfo $classInfo) {
+                return [];
+            };
+        }
 
         $previousNamespace = '__invalid//namespace__';
 
@@ -269,7 +287,10 @@ final class ClassGenerator
             $nodeTraverser = new NodeTraverser();
             $classBuilder->injectVisitors($nodeTraverser, $parser);
 
-            $files[$filename] = $printer->prettyPrintFile($nodeTraverser->traverse([]));
+            $files[$filename] = $printer->prettyPrintFile(
+                // @phpstan-ignore-next-line
+                $nodeTraverser->traverse($currentFileAst($classBuilder, $classInfo))
+            );
         }
 
         return $files;
