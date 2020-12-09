@@ -299,7 +299,7 @@ final class EnumFactory
     {
         $argumentName = ($this->propertyNameFilter)($argumentName);
 
-        $name = \ucfirst(($this->constValueFilter)($argumentName));
+        $name = \ucfirst($argumentName);
 
         return 'throw Invalid' . $name . '::for' . $name . '($' . $argumentName . ');';
     }
