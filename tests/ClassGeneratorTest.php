@@ -412,7 +412,7 @@ final class ShippingAddresses implements \Iterator, \Countable
     public function remove(Address $address) : self
     {
         $copy = clone $this;
-        $copy->shipping_addresses = array_values(array_filter($copy->shipping_addresses, static function ($v) {
+        $copy->shipping_addresses = array_values(array_filter($copy->shipping_addresses, static function ($v) use($address) {
             return !$v->equals($address);
         }));
         return $copy;
@@ -439,7 +439,7 @@ final class ShippingAddresses implements \Iterator, \Countable
     }
     public function filter(callable $filter) : self
     {
-        return new self(...array_values(array_filter($this->shipping_addresses, static function ($v) {
+        return new self(...array_values(array_filter($this->shipping_addresses, static function ($v) use($filter) {
             return $filter($v);
         })));
     }

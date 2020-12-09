@@ -19,6 +19,7 @@ use OpenCodeModeling\CodeAst\NodeVisitor\ClassMethod;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ReferenceType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ScalarType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeSet;
 use OpenCodeModeling\JsonSchemaToPhpAst\Common\IteratorFactory;
@@ -219,14 +220,15 @@ final class ArrayFactory
                 $resolvedTypeSet = $type->resolvedType();
 
                 if ($resolvedTypeSet === null) {
-                    throw new \RuntimeException(\sprintf('Reference has no resolved type for "%s".', $name));
+                    $resolvedTypeSet = new TypeSet(
+                        StringType::fromDefinition(['type' => StringType::type(), 'name' => $type->name()])
+                    );
                 }
-
                 if (\count($resolvedTypeSet) !== 1) {
                     throw new \RuntimeException('Can only handle one JSON type');
                 }
-                $type = $typeSet->first();
-                break;
+                $type = $resolvedTypeSet->first();
+                // no break
             case $type instanceof ScalarType:
                 break;
             default:
@@ -365,7 +367,7 @@ PHP;
         $copy->%s = array_values(
             array_filter(
                 $copy->%s,
-                static function($v) { return !$v->equals($%s); }
+                static function($v) use ($%s) { return !$v->equals($%s); }
             )
         );
         return $copy;
@@ -377,7 +379,7 @@ PHP;
                 (new ParameterGenerator(($this->propertyNameFilter)($argumentType), ($this->classNameFilter)($argumentType))),
             ],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, \sprintf($body, $propertyName, $propertyName, ($this->propertyNameFilter)($argumentType)))
+            new BodyGenerator($this->parser, \sprintf($body, $propertyName, $propertyName, ($this->propertyNameFilter)($argumentType), ($this->propertyNameFilter)($argumentType)))
         );
         $method->setTyped($this->typed);
         $method->setReturnType('self');
@@ -466,7 +468,7 @@ PHP;
             ...array_values(
                 array_filter(
                     $this->%s,
-                    static function($%s) { return $filter($%s); }
+                    static function($%s) use ($filter) { return $filter($%s); }
                 )
             )
         );

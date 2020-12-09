@@ -182,7 +182,7 @@ final class ReasonTypeListVO implements \Iterator, \Countable
     public function remove(ReasonType $reasonType) : self
     {
         $copy = clone $this;
-        $copy->items = array_values(array_filter($copy->items, static function ($v) {
+        $copy->items = array_values(array_filter($copy->items, static function ($v) use($reasonType) {
             return !$v->equals($reasonType);
         }));
         return $copy;
@@ -209,7 +209,7 @@ final class ReasonTypeListVO implements \Iterator, \Countable
     }
     public function filter(callable $filter) : self
     {
-        return new self(...array_values(array_filter($this->items, static function ($v) {
+        return new self(...array_values(array_filter($this->items, static function ($v) use($filter) {
             return $filter($v);
         })));
     }
