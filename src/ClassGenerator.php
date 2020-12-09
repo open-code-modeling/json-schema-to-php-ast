@@ -136,7 +136,6 @@ final class ClassGenerator
                                     $propertyType->name()
                                 );
                                 $propertyClassName = ($this->classNameFilter)($propertyType->name());
-                                $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
                             }
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
@@ -144,6 +143,7 @@ final class ClassGenerator
                                     $propertyType->isNullable() ? ('?' . $propertyClassName) : $propertyClassName
                                 )
                             );
+                            $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
                             break;
                         case $propertyType instanceof ScalarType:
                             $classBuilderCollection->add(
