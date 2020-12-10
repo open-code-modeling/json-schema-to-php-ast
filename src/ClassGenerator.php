@@ -122,7 +122,7 @@ final class ClassGenerator
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
                                     $propertyPropertyName,
-                                    $propertyType->isNullable() ? ('?' . $propertyClassName) : $propertyClassName
+                                    $this->determinePropertyType($propertyType, $propertyClassName)
                                 )
                             );
                             break;
@@ -140,7 +140,7 @@ final class ClassGenerator
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
                                     $propertyPropertyName,
-                                    $propertyType->isNullable() ? ('?' . $propertyClassName) : $propertyClassName
+                                    $this->determinePropertyType($propertyType, $propertyClassName)
                                 )
                             );
                             $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
@@ -153,7 +153,7 @@ final class ClassGenerator
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
                                     $propertyPropertyName,
-                                    $propertyType->isNullable() ? ('?' . $propertyClassName) : $propertyClassName
+                                    $this->determinePropertyType($propertyType, $propertyClassName)
                                 )
                             );
                             break;
@@ -328,5 +328,12 @@ final class ClassGenerator
             || $classBuilder->hasMethod('toInt')
             || $classBuilder->hasMethod('toFloat')
             || $classBuilder->hasMethod('toBool');
+    }
+
+    private function determinePropertyType(TypeDefinition $typeDefinition, string $className): string
+    {
+        return ($typeDefinition->isRequired() === false || $typeDefinition->isNullable() === true)
+            ? ('?' . $className)
+            : $className;
     }
 }
