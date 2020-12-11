@@ -11,12 +11,13 @@ declare(strict_types=1);
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst;
 
 use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
-use OpenCodeModeling\CodeAst\Builder\ClassBuilderCollection;
+use OpenCodeModeling\CodeAst\Builder\FileCollection;
 use OpenCodeModeling\CodeAst\Package\ClassInfoList;
 use OpenCodeModeling\CodeAst\Package\Psr4Info;
 use OpenCodeModeling\Filter\FilterFactory;
 use OpenCodeModeling\JsonSchemaToPhp\Type\Type;
 use OpenCodeModeling\JsonSchemaToPhpAst\ClassGenerator;
+use OpenCodeModeling\JsonSchemaToPhpAst\FileGenerator;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObjectFactory;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
@@ -31,6 +32,7 @@ final class ClassGeneratorTest extends TestCase
     protected ValueObjectFactory $valueObjectFactory;
     protected ClassInfoList $classInfoList;
     protected ClassGenerator $classGenerator;
+    protected FileGenerator $fileGenerator;
 
     public function setUp(): void
     {
@@ -68,6 +70,7 @@ final class ClassGeneratorTest extends TestCase
             FilterFactory::classNameFilter(),
             FilterFactory::propertyNameFilter()
         );
+        $this->fileGenerator = new FileGenerator($this->classInfoList);
     }
 
     /**
@@ -81,26 +84,32 @@ final class ClassGeneratorTest extends TestCase
         $typeSet = Type::fromDefinition($decodedJson);
         $srcFolder = 'tmp/';
 
-        $classBuilderCollection = ClassBuilderCollection::emptyList();
+        $fileCollection = FileCollection::emptyList();
         $classBuilder = ClassBuilder::fromScratch('Order', 'Acme')->setFinal(true);
 
-        $this->classGenerator->generateClasses($classBuilder, $classBuilderCollection, $typeSet, $srcFolder);
+        $this->classGenerator->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-        $this->assertCount(7, $classBuilderCollection);
+        $this->assertCount(7, $fileCollection);
 
         $filter = function (string $className) {
             return function (ClassBuilder $classBuilder) use ($className) {
                 return $classBuilder->getName() === $className;
             };
         };
-
-        $this->assertOrder($classBuilderCollection->filter(($filter)('Order'))->current());
-        $this->assertBillingAddress($classBuilderCollection->filter(($filter)('BillingAddress'))->current());
-        $this->assertShippingAddresses($classBuilderCollection->filter(($filter)('ShippingAddresses'))->current());
-        $this->assertAddress($classBuilderCollection->filter(($filter)('Address'))->current());
-        $this->assertStreetAddress($classBuilderCollection->filter(($filter)('StreetAddress'))->current());
-        $this->assertCity($classBuilderCollection->filter(($filter)('City'))->current());
-        $this->assertState($classBuilderCollection->filter(($filter)('State'))->current());
+        // @phpstan-ignore-next-line
+        $this->assertOrder($fileCollection->filter(($filter)('Order'))->current());
+        // @phpstan-ignore-next-line
+        $this->assertBillingAddress($fileCollection->filter(($filter)('BillingAddress'))->current());
+        // @phpstan-ignore-next-line->filter(($filter)('BillingAddress'))->current());
+        $this->assertShippingAddresses($fileCollection->filter(($filter)('ShippingAddresses'))->current());
+        // @phpstan-ignore-next-line
+        $this->assertAddress($fileCollection->filter(($filter)('Address'))->current());
+        // @phpstan-ignore-next-line
+        $this->assertStreetAddress($fileCollection->filter(($filter)('StreetAddress'))->current());
+        // @phpstan-ignore-next-line
+        $this->assertCity($fileCollection->filter(($filter)('City'))->current());
+        // @phpstan-ignore-next-line
+        $this->assertState($fileCollection->filter(($filter)('State'))->current());
     }
 
     /**
@@ -114,21 +123,21 @@ final class ClassGeneratorTest extends TestCase
         $typeSet = Type::fromDefinition($decodedJson);
         $srcFolder = 'tmp/';
 
-        $classBuilderCollection = ClassBuilderCollection::emptyList();
+        $fileCollection = FileCollection::emptyList();
         $classBuilder = ClassBuilder::fromScratch('Order', 'Acme')->setFinal(true);
 
-        $this->classGenerator->generateClasses($classBuilder, $classBuilderCollection, $typeSet, $srcFolder);
+        $this->classGenerator->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-        $this->assertCount(7, $classBuilderCollection);
+        $this->assertCount(7, $fileCollection);
 
-        $this->classGenerator->addGetterMethods($classBuilderCollection, true, FilterFactory::methodNameFilter());
+        $this->classGenerator->addGetterMethods($fileCollection, true, FilterFactory::methodNameFilter());
         $this->classGenerator->addClassConstantsForProperties(
-            $classBuilderCollection,
+            $fileCollection,
             FilterFactory::constantNameFilter(),
             FilterFactory::constantValueFilter()
         );
 
-        $files = $this->classGenerator->generateFiles($classBuilderCollection, $this->parser, $this->printer);
+        $files = $this->fileGenerator->generateFiles($fileCollection, $this->parser, $this->printer);
 
         $this->assertCount(7, $files);
 
@@ -167,7 +176,7 @@ final class ClassGeneratorTest extends TestCase
         $this->assertTrue($properties['billingAddress']->isTyped());
 
         $this->assertSame('shippingAddresses', $properties['shippingAddresses']->getName());
-        $this->assertSame('ShippingAddresses', $properties['shippingAddresses']->getType());
+        $this->assertSame('?ShippingAddresses', $properties['shippingAddresses']->getType());
         $this->assertTrue($properties['shippingAddresses']->isTyped());
 
         $this->assertCount(2, $classBuilder->getNamespaceImports());
@@ -331,12 +340,12 @@ final class Order
     public const BILLING_ADDRESS = 'billing_address';
     public const SHIPPING_ADDRESSES = 'shipping_addresses';
     private Address $billingAddress;
-    private ShippingAddresses $shippingAddresses;
+    private ?ShippingAddresses $shippingAddresses;
     public function billingAddress() : Address
     {
         return $this->billingAddress;
     }
-    public function shippingAddresses() : ShippingAddresses
+    public function shippingAddresses() : ?ShippingAddresses
     {
         return $this->shippingAddresses;
     }
