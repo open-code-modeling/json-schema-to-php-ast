@@ -2,27 +2,26 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 0.3.0 - TBD
+## 0.3.0 - 2020-12-11
 
-### Added
 
-- Nothing.
+-----
 
-### Changed
+### Release Notes for [0.3.0](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/4)
 
-- Nothing.
+Feature release (minor)
 
-### Deprecated
+### 0.3.0
 
-- Nothing.
+- Total issues resolved: **3**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
 
-### Removed
+#### enhancement
 
-- Nothing.
-
-### Fixed
-
-- Nothing.
+ - [15: Introduce FileGenerator for generating code of classes and interfaces](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/15) thanks to @sandrokeil
+ - [13: Generate full classes from JSON schema](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/13) thanks to @sandrokeil
+ - [11: Add factory for array value object ](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/11) thanks to @sandrokeil
 
 ## 0.2.1 - 2020-11-20
 
