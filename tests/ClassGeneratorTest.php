@@ -96,19 +96,12 @@ final class ClassGeneratorTest extends TestCase
                 return $classBuilder->getName() === $className;
             };
         };
-        // @phpstan-ignore-next-line
         $this->assertOrder($fileCollection->filter(($filter)('Order'))->current());
-        // @phpstan-ignore-next-line
         $this->assertBillingAddress($fileCollection->filter(($filter)('BillingAddress'))->current());
-        // @phpstan-ignore-next-line->filter(($filter)('BillingAddress'))->current());
         $this->assertShippingAddresses($fileCollection->filter(($filter)('ShippingAddresses'))->current());
-        // @phpstan-ignore-next-line
         $this->assertAddress($fileCollection->filter(($filter)('Address'))->current());
-        // @phpstan-ignore-next-line
         $this->assertStreetAddress($fileCollection->filter(($filter)('StreetAddress'))->current());
-        // @phpstan-ignore-next-line
         $this->assertCity($fileCollection->filter(($filter)('City'))->current());
-        // @phpstan-ignore-next-line
         $this->assertState($fileCollection->filter(($filter)('State'))->current());
     }
 

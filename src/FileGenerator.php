@@ -56,14 +56,12 @@ final class FileGenerator
                 $classInfo = $this->classInfoList->classInfoForNamespace($previousNamespace);
                 $path = $classInfo->getPath($classBuilder->getNamespace() . '\\' . $classBuilder->getName());
             }
-            // @phpstan-ignore-next-line
             $filename = $classInfo->getFilenameFromPathAndName($path, $classBuilder->getName());
 
             $nodeTraverser = new NodeTraverser();
             $classBuilder->injectVisitors($nodeTraverser, $parser);
 
             $files[$filename] = $printer->prettyPrintFile(
-                // @phpstan-ignore-next-line
                 $nodeTraverser->traverse($currentFileAst($classBuilder, $classInfo))
             );
         }
