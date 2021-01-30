@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<files psalm-version="4.4.1@9fd7a7d885b3a216cff8dec9d8c21a132f275224">
+  <file src="src/ValueObject/ArrayFactory.php">
+    <InvalidNullableReturnType occurrences="1">
+      <code>TypeDefinition</code>
+    </InvalidNullableReturnType>
+    <NullableReturnStatement occurrences="1">
+      <code>$type</code>
+    </NullableReturnStatement>
+    <TypeDoesNotContainNull occurrences="2">
+      <code>$typeSet === null</code>
+      <code>$typeSet === null</code>
+    </TypeDoesNotContainNull>
+  </file>
+  <file src="src/ValueObject/EnumFactory.php">
+    <InvalidArgument occurrences="1"/>
+  </file>
+</files>

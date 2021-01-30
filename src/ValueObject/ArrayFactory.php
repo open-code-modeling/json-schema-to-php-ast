@@ -208,7 +208,6 @@ final class ArrayFactory
         }
         $typeSet = \array_shift($typeSets);
 
-        // @phpstan-ignore-next-line
         if ($typeSet === null || $typeSet->count() !== 1) {
             throw new \RuntimeException('Can only handle one JSON type');
         }

@@ -3,6 +3,5 @@ app.env
 .phpunit.result.cache
 build/*
 vendor/
-composer.lock
 .idea
 .php_cs.cache
