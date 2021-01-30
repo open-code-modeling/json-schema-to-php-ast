@@ -20,10 +20,7 @@ use PhpParser\NodeVisitor;
 
 final class PropertyFactory
 {
-    /**
-     * @var bool
-     **/
-    private $typed;
+    private bool $typed;
 
     /**
      * @var callable
