@@ -201,7 +201,7 @@ final class ArrayFactory
         return $this->classBuilderFromNative($name, ...$typeDefinition->items());
     }
 
-    private function determineType(string $name, TypeSet ...$typeSets): TypeDefinition
+    private function determineType(string $name, TypeSet ...$typeSets): ?TypeDefinition
     {
         if (\count($typeSets) !== 1) {
             throw new \RuntimeException('Can only handle one JSON type');
