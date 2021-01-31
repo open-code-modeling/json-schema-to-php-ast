@@ -2,27 +2,26 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 0.4.0 - TBD
+## 0.4.0 - 2021-01-31
 
-### Added
 
-- Nothing.
+-----
 
-### Changed
+### Release Notes for [0.4.0](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/8)
 
-- Nothing.
+Feature release (minor)
 
-### Deprecated
+### 0.4.0
 
-- Nothing.
+- Total issues resolved: **3**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
 
-### Removed
+#### enhancement
 
-- Nothing.
-
-### Fixed
-
-- Nothing.
+ - [19: Move ClassGenerator code to ValueObjectFactory](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/19) thanks to @sandrokeil
+ - [18: Remove FileGenerator class](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/18) thanks to @sandrokeil
+ - [16: Switch from PHPStan to Psalm](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/16) thanks to @sandrokeil
 
 ## 0.3.0 - 2020-12-11
 
