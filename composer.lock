@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e2f06e751f01d4b667e07f44eed0d108",
+    "content-hash": "d8a421ab8749cadc367ebe4a1dcbe102",
     "packages": [
         {
             "name": "nikic/php-parser",
@@ -121,16 +121,16 @@
         },
         {
             "name": "open-code-modeling/php-code-ast",
-            "version": "0.10.3",
+            "version": "0.11.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/open-code-modeling/php-code-ast.git",
-                "reference": "45ee6dbff06c44bc0d5d7a6cfcb2dc1c9cea7898"
+                "reference": "86e6d62a737080ff3a0a6b88578d8c3a765b3821"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/open-code-modeling/php-code-ast/zipball/45ee6dbff06c44bc0d5d7a6cfcb2dc1c9cea7898",
-                "reference": "45ee6dbff06c44bc0d5d7a6cfcb2dc1c9cea7898",
+                "url": "https://api.github.com/repos/open-code-modeling/php-code-ast/zipball/86e6d62a737080ff3a0a6b88578d8c3a765b3821",
+                "reference": "86e6d62a737080ff3a0a6b88578d8c3a765b3821",
                 "shasum": ""
             },
             "require": {
@@ -142,11 +142,11 @@
                 "laminas/laminas-filter": "^2.9",
                 "open-code-modeling/php-filter": "^0.1.1",
                 "phpspec/prophecy-phpunit": "^2.0",
-                "phpstan/phpstan": "^0.12.33",
-                "phpstan/phpstan-strict-rules": "^0.12.4",
                 "phpunit/phpunit": "^9.5.0",
-                "prooph/php-cs-fixer-config": "^v0.3.1",
-                "roave/security-advisories": "dev-master"
+                "prooph/php-cs-fixer-config": "^v0.4.0",
+                "psalm/plugin-phpunit": "^0.15.0",
+                "roave/security-advisories": "dev-master",
+                "vimeo/psalm": "^4.4"
             },
             "type": "library",
             "autoload": {
@@ -170,7 +170,7 @@
                 "issues": "https://github.com/open-code-modeling/php-code-ast/issues",
                 "source": "https://github.com/open-code-modeling/php-code-ast"
             },
-            "time": "2021-01-29T11:20:56+00:00"
+            "time": "2021-01-30T21:38:27+00:00"
         }
     ],
     "packages-dev": [

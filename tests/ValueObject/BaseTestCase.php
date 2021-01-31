@@ -10,6 +10,7 @@ declare(strict_types=1);
 
 namespace OpenCodeModelingTest\JsonSchemaToPhpAst\ValueObject;
 
+use OpenCodeModeling\CodeAst\Package\ClassInfoList;
 use OpenCodeModeling\Filter\FilterFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObjectFactory;
 use PhpParser\Parser;
@@ -61,7 +62,9 @@ abstract class BaseTestCase extends TestCase
         $this->methodNameFilter = FilterFactory::methodNameFilter();
 
         $this->voFactory = new ValueObjectFactory(
+            new ClassInfoList(),
             $this->parser,
+            $this->printer,
             true,
             $this->classNameFilter,
             $this->propertyNameFilter,

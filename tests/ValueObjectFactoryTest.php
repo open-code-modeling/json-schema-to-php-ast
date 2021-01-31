@@ -16,8 +16,6 @@ use OpenCodeModeling\CodeAst\Package\ClassInfoList;
 use OpenCodeModeling\CodeAst\Package\Psr4Info;
 use OpenCodeModeling\Filter\FilterFactory;
 use OpenCodeModeling\JsonSchemaToPhp\Type\Type;
-use OpenCodeModeling\JsonSchemaToPhpAst\ClassGenerator;
-use OpenCodeModeling\JsonSchemaToPhpAst\FileGenerator;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObjectFactory;
 use PhpParser\Parser;
 use PhpParser\ParserFactory;
@@ -25,14 +23,12 @@ use PhpParser\PrettyPrinter\Standard;
 use PhpParser\PrettyPrinterAbstract;
 use PHPUnit\Framework\TestCase;
 
-final class ClassGeneratorTest extends TestCase
+final class ValueObjectFactoryTest extends TestCase
 {
     protected Parser $parser;
     protected PrettyPrinterAbstract $printer;
     protected ValueObjectFactory $valueObjectFactory;
     protected ClassInfoList $classInfoList;
-    protected ClassGenerator $classGenerator;
-    protected FileGenerator $fileGenerator;
 
     public function setUp(): void
     {
@@ -55,7 +51,9 @@ final class ClassGeneratorTest extends TestCase
         $methodNameFilter = FilterFactory::methodNameFilter();
 
         $this->valueObjectFactory = new ValueObjectFactory(
+            $this->classInfoList,
             $this->parser,
+            $this->printer,
             true,
             $classNameFilter,
             $propertyNameFilter,
@@ -63,14 +61,6 @@ final class ClassGeneratorTest extends TestCase
             $constantNameFilter,
             $constantValueFilter
         );
-
-        $this->classGenerator = new ClassGenerator(
-            $this->classInfoList,
-            $this->valueObjectFactory,
-            FilterFactory::classNameFilter(),
-            FilterFactory::propertyNameFilter()
-        );
-        $this->fileGenerator = new FileGenerator($this->classInfoList);
     }
 
     /**
@@ -87,12 +77,18 @@ final class ClassGeneratorTest extends TestCase
         $fileCollection = FileCollection::emptyList();
         $classBuilder = ClassBuilder::fromScratch('Order', 'Acme')->setFinal(true);
 
-        $this->classGenerator->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
+        $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
         $this->assertCount(7, $fileCollection);
 
-        $filter = function (string $className) {
-            return function (ClassBuilder $classBuilder) use ($className) {
+        /**
+         * @param string $className
+         * @return \Closure
+         *
+         * @psalm-return \Closure(\OpenCodeModeling\CodeAst\Builder\ClassBuilder):bool
+         */
+        $filter = static function (string $className): \Closure {
+            return static function (ClassBuilder $classBuilder) use ($className) {
                 return $classBuilder->getName() === $className;
             };
         };
@@ -119,18 +115,14 @@ final class ClassGeneratorTest extends TestCase
         $fileCollection = FileCollection::emptyList();
         $classBuilder = ClassBuilder::fromScratch('Order', 'Acme')->setFinal(true);
 
-        $this->classGenerator->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
+        $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
         $this->assertCount(7, $fileCollection);
 
-        $this->classGenerator->addGetterMethods($fileCollection, true, FilterFactory::methodNameFilter());
-        $this->classGenerator->addClassConstantsForProperties(
-            $fileCollection,
-            FilterFactory::constantNameFilter(),
-            FilterFactory::constantValueFilter()
-        );
+        $this->valueObjectFactory->addGetterMethodsForProperties($fileCollection, true);
+        $this->valueObjectFactory->addClassConstantsForProperties($fileCollection);
 
-        $files = $this->fileGenerator->generateFiles($fileCollection, $this->parser, $this->printer);
+        $files = $this->valueObjectFactory->generateFiles($fileCollection);
 
         $this->assertCount(7, $files);
 
