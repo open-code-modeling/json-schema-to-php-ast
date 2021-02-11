@@ -19,8 +19,6 @@ use OpenCodeModeling\CodeAst\NodeVisitor\ClassMethod;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ReferenceType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ScalarType;
-use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
-use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeSet;
 use OpenCodeModeling\JsonSchemaToPhpAst\Common\IteratorFactory;
 use PhpParser\NodeVisitor;
@@ -201,7 +199,7 @@ final class ArrayFactory
         return $this->classBuilderFromNative($name, ...$typeDefinition->items());
     }
 
-    private function determineType(string $name, TypeSet ...$typeSets): ?TypeDefinition
+    private function determineTypeName(string $name, TypeSet ...$typeSets): ?string
     {
         if (\count($typeSets) !== 1) {
             throw new \RuntimeException('Can only handle one JSON type');
@@ -219,9 +217,7 @@ final class ArrayFactory
                 $resolvedTypeSet = $type->resolvedType();
 
                 if ($resolvedTypeSet === null) {
-                    $resolvedTypeSet = new TypeSet(
-                        StringType::fromDefinition(['type' => StringType::type(), 'name' => $type->name()])
-                    );
+                    return $type->extractNameFromReference();
                 }
                 if (\count($resolvedTypeSet) !== 1) {
                     throw new \RuntimeException('Can only handle one JSON type');
@@ -236,7 +232,7 @@ final class ArrayFactory
                 );
         }
 
-        return $type;
+        return $type->name();
     }
 
     /**
@@ -246,8 +242,7 @@ final class ArrayFactory
      */
     public function nodeVisitorsFromNative(string $name, TypeSet ...$typeSets): array
     {
-        $type = $this->determineType($name, ...$typeSets);
-        $typeName = $type->name();
+        $typeName = $this->determineTypeName($name, ...$typeSets);
 
         $nodeVisitors = $this->iteratorFactory->nodeVisitorsFromNative(
             ($this->propertyNameFilter)($name),
@@ -273,8 +268,7 @@ final class ArrayFactory
 
     public function classBuilderFromNative(string $name, TypeSet ...$typeSets): ClassBuilder
     {
-        $type = $this->determineType($name, ...$typeSets);
-        $typeName = $type->name();
+        $typeName = $this->determineTypeName($name, ...$typeSets);
 
         $classBuilder = $this->iteratorFactory->classBuilderFromNative(
             ($this->propertyNameFilter)($name),
@@ -322,10 +316,10 @@ final class ArrayFactory
         $method = new MethodGenerator(
             '__construct',
             [
-                (new ParameterGenerator($argumentName, ($this->classNameFilter)($argumentType)))->setVariadic(true),
+                (new ParameterGenerator(($this->propertyNameFilter)($argumentName), ($this->classNameFilter)($argumentType)))->setVariadic(true),
             ],
             MethodGenerator::FLAG_PRIVATE,
-            new BodyGenerator($this->parser, \sprintf('$this->%s = $%s;', $propertyName, $argumentName))
+            new BodyGenerator($this->parser, \sprintf('$this->%s = $%s;', ($this->propertyNameFilter)($propertyName), ($this->propertyNameFilter)($argumentName)))
         );
         $method->setTyped($this->typed);
 
@@ -349,7 +343,14 @@ PHP;
                 (new ParameterGenerator(($this->propertyNameFilter)($argumentType), ($this->classNameFilter)($argumentType))),
             ],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, \sprintf($body, $propertyName, ($this->propertyNameFilter)($argumentType)))
+            new BodyGenerator(
+                $this->parser,
+                \sprintf(
+                    $body,
+                    ($this->propertyNameFilter)($propertyName),
+                    ($this->propertyNameFilter)($argumentType)
+                )
+            )
         );
         $method->setTyped($this->typed);
         $method->setReturnType('self');
@@ -378,7 +379,16 @@ PHP;
                 (new ParameterGenerator(($this->propertyNameFilter)($argumentType), ($this->classNameFilter)($argumentType))),
             ],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, \sprintf($body, $propertyName, $propertyName, ($this->propertyNameFilter)($argumentType), ($this->propertyNameFilter)($argumentType)))
+            new BodyGenerator(
+                $this->parser,
+                \sprintf(
+                    $body,
+                    ($this->propertyNameFilter)($propertyName),
+                    ($this->propertyNameFilter)($propertyName),
+                    ($this->propertyNameFilter)($argumentType),
+                    ($this->propertyNameFilter)($argumentType)
+                )
+            )
         );
         $method->setTyped($this->typed);
         $method->setReturnType('self');
@@ -479,7 +489,7 @@ PHP;
                 new ParameterGenerator('filter', 'callable'),
             ],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, \sprintf($body, $propertyName, 'v', 'v'))
+            new BodyGenerator($this->parser, \sprintf($body, ($this->propertyNameFilter)($propertyName), 'v', 'v'))
         );
         $method->setTyped($this->typed);
         $method->setReturnType('self');
@@ -566,10 +576,10 @@ PHP;
         $method = new MethodGenerator(
             'fromItems',
             [
-                (new ParameterGenerator($argumentName, ($this->classNameFilter)($argumentType)))->setVariadic(true),
+                (new ParameterGenerator(($this->propertyNameFilter)($argumentName), ($this->classNameFilter)($argumentType)))->setVariadic(true),
             ],
             MethodGenerator::FLAG_PUBLIC | MethodGenerator::FLAG_STATIC,
-            new BodyGenerator($this->parser, \sprintf('return new self(...$%s);', $argumentName))
+            new BodyGenerator($this->parser, \sprintf('return new self(...$%s);', ($this->propertyNameFilter)($argumentName)))
         );
         $method->setTyped($this->typed);
         $method->setReturnType('self');

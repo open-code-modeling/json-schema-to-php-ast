@@ -1,0 +1,4 @@
+{
+    "billing_address": "Address|namespace:Billing",
+    "address?": "ShippingAddresses|namespace:Payment"
+}

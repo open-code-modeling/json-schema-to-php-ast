@@ -64,7 +64,6 @@ Assume you have the following JSON schema
 
 Then you can use the `ValueObjectFactory` to generate PHP code for the following classes:
 - `Order`
-- `BillingAddress`
 - `ShippingAddresses`
 - `Address`
 - `StreetAddress`
@@ -118,7 +117,7 @@ $classBuilder = ClassBuilder::fromScratch('Order', 'YourNamespaceFromComposer')-
 
 $valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-// $fileCollection contains 7 classes
+// $fileCollection contains 6 classes
 
 // now let's add constants and getter methods of properties for non value objects
 $valueObjectFactory->addGetterMethodsForProperties($fileCollection, true);

@@ -25,10 +25,15 @@ use PHPUnit\Framework\TestCase;
 
 final class ValueObjectFactoryTest extends TestCase
 {
-    protected Parser $parser;
-    protected PrettyPrinterAbstract $printer;
-    protected ValueObjectFactory $valueObjectFactory;
-    protected ClassInfoList $classInfoList;
+    private Parser $parser;
+    private PrettyPrinterAbstract $printer;
+    private ValueObjectFactory $valueObjectFactory;
+    private ClassInfoList $classInfoList;
+
+    /**
+     * @var \Closure
+     */
+    private $fileFilter;
 
     public function setUp(): void
     {
@@ -61,6 +66,18 @@ final class ValueObjectFactoryTest extends TestCase
             $constantNameFilter,
             $constantValueFilter
         );
+
+        /**
+         * @param string $className
+         * @return \Closure
+         *
+         * @psalm-return \Closure(\OpenCodeModeling\CodeAst\Builder\ClassBuilder):bool
+         */
+        $this->fileFilter = static function (string $className): \Closure {
+            return static function (ClassBuilder $classBuilder) use ($className) {
+                return $classBuilder->getName() === $className;
+            };
+        };
     }
 
     /**
@@ -79,26 +96,14 @@ final class ValueObjectFactoryTest extends TestCase
 
         $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-        $this->assertCount(7, $fileCollection);
+        $this->assertCount(6, $fileCollection);
 
-        /**
-         * @param string $className
-         * @return \Closure
-         *
-         * @psalm-return \Closure(\OpenCodeModeling\CodeAst\Builder\ClassBuilder):bool
-         */
-        $filter = static function (string $className): \Closure {
-            return static function (ClassBuilder $classBuilder) use ($className) {
-                return $classBuilder->getName() === $className;
-            };
-        };
-        $this->assertOrder($fileCollection->filter(($filter)('Order'))->current());
-        $this->assertBillingAddress($fileCollection->filter(($filter)('BillingAddress'))->current());
-        $this->assertShippingAddresses($fileCollection->filter(($filter)('ShippingAddresses'))->current());
-        $this->assertAddress($fileCollection->filter(($filter)('Address'))->current());
-        $this->assertStreetAddress($fileCollection->filter(($filter)('StreetAddress'))->current());
-        $this->assertCity($fileCollection->filter(($filter)('City'))->current());
-        $this->assertState($fileCollection->filter(($filter)('State'))->current());
+        $this->assertOrder($fileCollection->filter(($this->fileFilter)('Order'))->current());
+        $this->assertShippingAddresses($fileCollection->filter(($this->fileFilter)('ShippingAddresses'))->current());
+        $this->assertAddress($fileCollection->filter(($this->fileFilter)('Address'))->current());
+        $this->assertStreetAddress($fileCollection->filter(($this->fileFilter)('StreetAddress'))->current());
+        $this->assertCity($fileCollection->filter(($this->fileFilter)('City'))->current());
+        $this->assertState($fileCollection->filter(($this->fileFilter)('State'))->current());
     }
 
     /**
@@ -117,16 +122,15 @@ final class ValueObjectFactoryTest extends TestCase
 
         $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-        $this->assertCount(7, $fileCollection);
+        $this->assertCount(6, $fileCollection);
 
         $this->valueObjectFactory->addGetterMethodsForProperties($fileCollection, true);
         $this->valueObjectFactory->addClassConstantsForProperties($fileCollection);
 
         $files = $this->valueObjectFactory->generateFiles($fileCollection);
 
-        $this->assertCount(7, $files);
+        $this->assertCount(6, $files);
 
-        $this->assertArrayHasKey('tmp/BillingAddress.php', $files);
         $this->assertArrayHasKey('tmp/City.php', $files);
         $this->assertArrayHasKey('tmp/Order.php', $files);
         $this->assertArrayHasKey('tmp/ShippingAddresses.php', $files);
@@ -135,12 +139,108 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertArrayHasKey('tmp/StreetAddress.php', $files);
 
         $this->assertOrderFile($files['tmp/Order.php']);
-        $this->assertBillingAddressFile($files['tmp/BillingAddress.php']);
         $this->assertShippingAddressesFile($files['tmp/ShippingAddresses.php']);
         $this->assertAddressFile($files['tmp/Address.php']);
         $this->assertStreetAddressFile($files['tmp/StreetAddress.php']);
         $this->assertCityFile($files['tmp/City.php']);
         $this->assertStateFile($files['tmp/State.php']);
+    }
+
+    /**
+     * @test
+     */
+    public function it_generates_classes_of_objects_with_namespaced_properties(): void
+    {
+        $json = \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_with_objects_namespace.json');
+        $decodedJson = \json_decode($json, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+
+        $typeSet = Type::fromDefinition($decodedJson);
+        $srcFolder = 'tmp/';
+
+        $fileCollection = FileCollection::emptyList();
+        $classBuilder = ClassBuilder::fromScratch('Order', 'Acme')->setFinal(true);
+
+        $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
+
+        $this->assertCount(6, $fileCollection);
+
+        /** @var ClassBuilder $classBuilder */
+        foreach ($fileCollection as $classBuilder) {
+            switch (true) {
+                case $classBuilder->getName() === 'Address':
+                    $this->assertSame('Acme', $classBuilder->getNamespace());
+                    $this->assertArrayHasKey('Acme\Address\City', $classBuilder->getNamespaceImports());
+                    $this->assertArrayHasKey('Acme\Address\State', $classBuilder->getNamespaceImports());
+                    $this->assertArrayHasKey('Acme\Address\StreetAddress', $classBuilder->getNamespaceImports());
+                    break;
+                case $classBuilder->getName() === 'City':
+                case $classBuilder->getName() === 'StreetAddress':
+                case $classBuilder->getName() === 'State':
+                    $this->assertSame('Acme\\Address', $classBuilder->getNamespace());
+                    break;
+                case $classBuilder->getName() === 'ShippingAddresses':
+                    $this->assertSame('Acme\\Order', $classBuilder->getNamespace());
+
+                    $properties = $classBuilder->getProperties();
+                    $this->assertArrayHasKey('shippingAddresses', $properties);
+                    $this->assertSame('array', $properties['shippingAddresses']->getType());
+                    $this->assertSame('Address[]', $properties['shippingAddresses']->getTypeDocBlockHint());
+                    break;
+                case $classBuilder->getName() === 'Order':
+                    $this->assertSame('Acme', $classBuilder->getNamespace());
+                    $this->assertArrayHasKey('Acme\Order\Address', $classBuilder->getNamespaceImports());
+                    $this->assertArrayHasKey('Acme\Order\ShippingAddresses', $classBuilder->getNamespaceImports());
+
+                    $properties = $classBuilder->getProperties();
+                    $this->assertArrayHasKey('billingAddress', $properties);
+                    $this->assertArrayHasKey('shippingAddresses', $properties);
+
+                    $this->assertSame('Address', $properties['billingAddress']->getType());
+                    $this->assertSame('?ShippingAddresses', $properties['shippingAddresses']->getType());
+                    break;
+                default:
+                    $this->assertTrue(false, \sprintf('Unexpected class "%s"', $classBuilder->getName()));
+            }
+        }
+    }
+
+    /**
+     * @test
+     */
+    public function it_generates_classes_of_objects_with_namespaced_properties_shorthand(): void
+    {
+        $json = \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_shorthand_namespace.json');
+        $decodedJson = \json_decode($json, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+
+        $typeSet = Type::fromShorthand($decodedJson);
+        $srcFolder = 'tmp/';
+
+        $fileCollection = FileCollection::emptyList();
+        $classBuilder = ClassBuilder::fromScratch('Order', 'Acme')->setFinal(true);
+
+        $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
+
+        $this->assertCount(1, $fileCollection);
+
+        /** @var ClassBuilder $classBuilder */
+        foreach ($fileCollection as $classBuilder) {
+            switch (true) {
+                case $classBuilder->getName() === 'Order':
+                    $this->assertSame('Acme', $classBuilder->getNamespace());
+                    $this->assertArrayHasKey('Acme\Billing\Address', $classBuilder->getNamespaceImports());
+                    $this->assertArrayHasKey('Acme\Payment\ShippingAddresses', $classBuilder->getNamespaceImports());
+
+                    $properties = $classBuilder->getProperties();
+                    $this->assertArrayHasKey('billingAddress', $properties);
+                    $this->assertArrayHasKey('address', $properties);
+
+                    $this->assertSame('Address', $properties['billingAddress']->getType());
+                    $this->assertSame('?ShippingAddresses', $properties['address']->getType());
+                    break;
+                default:
+                    $this->assertTrue(false, \sprintf('Unexpected class "%s"', $classBuilder->getName()));
+            }
+        }
     }
 
     private function assertOrder(ClassBuilder $classBuilder): void
@@ -164,11 +264,7 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertSame('?ShippingAddresses', $properties['shippingAddresses']->getType());
         $this->assertTrue($properties['shippingAddresses']->isTyped());
 
-        $this->assertCount(2, $classBuilder->getNamespaceImports());
-        $this->assertSame(
-            ['Acme\\Address' => 'Acme\\Address', 'Acme\\ShippingAddresses' => 'Acme\\ShippingAddresses'],
-            $classBuilder->getNamespaceImports()
-        );
+        $this->assertCount(0, $classBuilder->getNamespaceImports());
     }
 
     private function assertBillingAddress(ClassBuilder $classBuilder): void
@@ -180,20 +276,12 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertTrue($classBuilder->isTyped());
 
         $properties = $classBuilder->getProperties();
-        $this->assertCount(3, $properties);
-        $this->assertArrayHasKey('city', $properties);
-        $this->assertArrayHasKey('federalState', $properties);
-        $this->assertArrayHasKey('streetAddress', $properties);
+        $this->assertCount(1, $properties);
+        $this->assertArrayHasKey('address', $properties);
 
-        $this->assertSame('?City', $properties['city']->getType());
-        $this->assertSame('State', $properties['federalState']->getType());
-        $this->assertSame('StreetAddress', $properties['streetAddress']->getType());
+        $this->assertSame('Address', $properties['address']->getType());
 
-        $this->assertCount(3, $classBuilder->getNamespaceImports());
-        $this->assertSame(
-            ['Acme\\StreetAddress' => 'Acme\\StreetAddress', 'Acme\\City' => 'Acme\\City', 'Acme\\State' => 'Acme\\State'],
-            $classBuilder->getNamespaceImports()
-        );
+        $this->assertCount(0, $classBuilder->getNamespaceImports());
     }
 
     private function assertShippingAddresses(ClassBuilder $classBuilder): void
@@ -213,11 +301,7 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertSame('array', $properties['shippingAddresses']->getType());
         $this->assertSame('Address[]', $properties['shippingAddresses']->getTypeDocBlockHint());
 
-        $this->assertCount(1, $classBuilder->getNamespaceImports());
-        $this->assertSame(
-            ['Acme\\Address' => 'Acme\\Address'],
-            $classBuilder->getNamespaceImports()
-        );
+        $this->assertCount(0, $classBuilder->getNamespaceImports());
     }
 
     private function assertAddress(ClassBuilder $classBuilder): void
@@ -238,11 +322,7 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertSame('State', $properties['federalState']->getType());
         $this->assertSame('StreetAddress', $properties['streetAddress']->getType());
 
-        $this->assertCount(3, $classBuilder->getNamespaceImports());
-        $this->assertSame(
-            ['Acme\\StreetAddress' => 'Acme\\StreetAddress', 'Acme\\City' => 'Acme\\City', 'Acme\\State' => 'Acme\\State'],
-            $classBuilder->getNamespaceImports()
-        );
+        $this->assertCount(0, $classBuilder->getNamespaceImports());
     }
 
     private function assertStreetAddress(ClassBuilder $classBuilder): void
@@ -318,8 +398,6 @@ final class ValueObjectFactoryTest extends TestCase
 declare (strict_types=1);
 namespace Acme;
 
-use Acme\Address;
-use Acme\ShippingAddresses;
 final class Order
 {
     public const BILLING_ADDRESS = 'billing_address';
@@ -347,7 +425,6 @@ PHP;
 declare (strict_types=1);
 namespace Acme;
 
-use Acme\Address;
 final class ShippingAddresses implements \Iterator, \Countable
 {
     private int $position = 0;
@@ -385,28 +462,28 @@ final class ShippingAddresses implements \Iterator, \Countable
             return Address::fromString($item);
         }, $shippingAddresses));
     }
-    public static function fromItems(Address ...$shipping_addresses) : self
+    public static function fromItems(Address ...$shippingAddresses) : self
     {
-        return new self(...$shipping_addresses);
+        return new self(...$shippingAddresses);
     }
     public static function emptyList() : self
     {
         return new self();
     }
-    private function __construct(Address ...$shipping_addresses)
+    private function __construct(Address ...$shippingAddresses)
     {
-        $this->shipping_addresses = $shipping_addresses;
+        $this->shippingAddresses = $shippingAddresses;
     }
     public function add(Address $address) : self
     {
         $copy = clone $this;
-        $copy->shipping_addresses[] = $address;
+        $copy->shippingAddresses[] = $address;
         return $copy;
     }
     public function remove(Address $address) : self
     {
         $copy = clone $this;
-        $copy->shipping_addresses = array_values(array_filter($copy->shipping_addresses, static function ($v) use($address) {
+        $copy->shippingAddresses = array_values(array_filter($copy->shippingAddresses, static function ($v) use($address) {
             return !$v->equals($address);
         }));
         return $copy;
@@ -433,7 +510,7 @@ final class ShippingAddresses implements \Iterator, \Countable
     }
     public function filter(callable $filter) : self
     {
-        return new self(...array_values(array_filter($this->shipping_addresses, static function ($v) use($filter) {
+        return new self(...array_values(array_filter($this->shippingAddresses, static function ($v) use($filter) {
             return $filter($v);
         })));
     }
@@ -475,9 +552,6 @@ PHP;
 declare (strict_types=1);
 namespace Acme;
 
-use Acme\StreetAddress;
-use Acme\City;
-use Acme\State;
 final class Address
 {
     public const STREET_ADDRESS = 'street_address';
@@ -511,28 +585,13 @@ PHP;
 declare (strict_types=1);
 namespace Acme;
 
-use Acme\StreetAddress;
-use Acme\City;
-use Acme\State;
 final class BillingAddress
 {
-    public const STREET_ADDRESS = 'street_address';
-    public const CITY = 'city';
-    public const FEDERAL_STATE = 'federal_state';
-    private StreetAddress $streetAddress;
-    private ?City $city;
-    private State $federalState;
-    public function streetAddress() : StreetAddress
+    public const ADDRESS = 'address';
+    private Address $address;
+    public function address() : Address
     {
-        return $this->streetAddress;
-    }
-    public function city() : ?City
-    {
-        return $this->city;
-    }
-    public function federalState() : State
-    {
-        return $this->federalState;
+        return $this->address;
     }
 }
 PHP;

@@ -20,6 +20,7 @@ use OpenCodeModeling\CodeAst\Package\ClassInfo;
 use OpenCodeModeling\CodeAst\Package\ClassInfoList;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\BooleanType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\CustomSupport;
 use OpenCodeModeling\JsonSchemaToPhp\Type\IntegerType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\NumberType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ObjectType;
@@ -29,6 +30,7 @@ use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeSet;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\ArrayFactory;
+use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\Bcp47Factory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\BooleanFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\DateTimeFactory;
 use OpenCodeModeling\JsonSchemaToPhpAst\ValueObject\EnumFactory;
@@ -50,6 +52,7 @@ final class ValueObjectFactory
     private EnumFactory $enumFactory;
     private UuidFactory $uuidFactory;
     private ArrayFactory $arrayFactory;
+    private Bcp47Factory $bcp47Factory;
 
     private ClassInfoList $classInfoList;
     private FileCodeGenerator $fileCodeGenerator;
@@ -120,6 +123,7 @@ final class ValueObjectFactory
         $this->enumFactory = new EnumFactory($parser, $typed, $propertyNameFilter, $methodNameFilter, $constNameFilter, $constValueFilter);
         $this->uuidFactory = new UuidFactory($parser, $typed, $propertyNameFilter);
         $this->arrayFactory = new ArrayFactory($parser, $typed, $classNameFilter, $propertyNameFilter);
+        $this->bcp47Factory = new Bcp47Factory($parser, $typed, $propertyNameFilter);
 
         $this->classNameFilter = $classNameFilter;
         $this->propertyNameFilter = $propertyNameFilter;
@@ -170,9 +174,12 @@ final class ValueObjectFactory
                 }
                 switch ($typeDefinition->format()) {
                     case TypeDefinition::FORMAT_DATETIME:
+                    case 'ISO 8601':
                         return $this->dateTimeFactory->nodeVisitors($typeDefinition);
                     case 'uuid':
                         return $this->uuidFactory->nodeVisitors($typeDefinition);
+                    case 'BCP 47':
+                        return $this->bcp47Factory->nodeVisitors($typeDefinition);
                     default:
                         return $this->stringFactory->nodeVisitors($typeDefinition);
                 }
@@ -199,9 +206,12 @@ final class ValueObjectFactory
                 }
                 switch ($typeDefinition->format()) {
                     case TypeDefinition::FORMAT_DATETIME:
+                    case 'ISO 8601':
                         return $this->dateTimeFactory->classBuilder($typeDefinition);
                     case 'uuid':
                         return $this->uuidFactory->classBuilder($typeDefinition);
+                    case 'BCP 47':
+                        return $this->bcp47Factory->classBuilder($typeDefinition);
                     default:
                         return $this->stringFactory->classBuilder($typeDefinition);
                 }
@@ -237,7 +247,7 @@ final class ValueObjectFactory
         $type = $typeSet->first();
 
         $classInfo = $this->classInfoList->classInfoForPath($srcFolder);
-        $classNamespace = $classInfo->getClassNamespaceFromPath($srcFolder);
+        $classNamespacePath = $classInfo->getClassNamespaceFromPath($srcFolder);
 
         if ($type instanceof ReferenceType
             && $refType = $type->resolvedType()
@@ -250,10 +260,12 @@ final class ValueObjectFactory
             case $type instanceof ObjectType:
                 /** @var TypeSet $propertyTypeSet */
                 foreach ($type->properties() as $propertyName => $propertyTypeSet) {
+                    $propertyType = $propertyTypeSet->first();
+
                     $propertyClassName = ($this->classNameFilter)($propertyName);
+                    $propertyClassNamespace = $this->extractNamespace($classNamespacePath, $propertyType);
                     $propertyPropertyName = ($this->propertyNameFilter)($propertyName);
 
-                    $propertyType = $propertyTypeSet->first();
                     switch (true) {
                         case $propertyType instanceof ArrayType:
                             foreach ($propertyType->items() as $itemTypeSet) {
@@ -266,7 +278,7 @@ final class ValueObjectFactory
                                 $itemPropertyName = ($this->propertyNameFilter)($itemType->name());
 
                                 $this->generateClasses(
-                                    ClassBuilder::fromScratch($itemClassName, $classNamespace)->setFinal(true),
+                                    ClassBuilder::fromScratch($itemClassName, $classNamespacePath)->setFinal(true),
                                     $fileCollection,
                                     $itemTypeSet,
                                     $srcFolder,
@@ -276,13 +288,13 @@ final class ValueObjectFactory
                         // no break
                         case $propertyType instanceof ObjectType:
                             $this->generateClasses(
-                                ClassBuilder::fromScratch($propertyClassName, $classNamespace)->setFinal(true),
+                                ClassBuilder::fromScratch($propertyClassName, $propertyClassNamespace)->setFinal(true),
                                 $fileCollection,
                                 $propertyTypeSet,
                                 $srcFolder,
                                 $propertyClassName
                             );
-                            $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
+                            $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
                                     $propertyPropertyName,
@@ -291,15 +303,22 @@ final class ValueObjectFactory
                             );
                             break;
                         case $propertyType instanceof ReferenceType:
-                            if ($propertyRefType = $propertyType->resolvedType()) {
+                            $propertyClassName = ($this->classNameFilter)($propertyType->name());
+
+                            if ($propertyRefTypeSet = $propertyType->resolvedType()) {
+                                $propertyRefType = $propertyRefTypeSet->first();
+                                $propertyRefClassName = ($this->classNameFilter)($propertyRefType->name());
+                                $propertyRefClassNamespace = $this->extractNamespace($classNamespacePath, $propertyRefType);
+
                                 $this->generateClasses(
-                                    ClassBuilder::fromScratch($propertyClassName, $classNamespace)->setFinal(true),
+                                    ClassBuilder::fromScratch($propertyRefClassName, $propertyRefClassNamespace)->setFinal(true),
                                     $fileCollection,
-                                    $propertyRefType,
+                                    $propertyRefTypeSet,
                                     $srcFolder,
                                     $propertyType->name()
                                 );
-                                $propertyClassName = ($this->classNameFilter)($propertyType->name());
+                                $propertyClassName = $propertyRefClassName;
+                                $propertyType = $propertyRefType;
                             }
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
@@ -307,13 +326,13 @@ final class ValueObjectFactory
                                     $this->determinePropertyType($propertyType, $propertyClassName)
                                 )
                             );
-                            $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
+                            $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             break;
                         case $propertyType instanceof ScalarType:
                             $fileCollection->add(
-                                $this->generateValueObject($propertyClassName, $classNamespace, $propertyType)
+                                $this->generateValueObject($propertyClassName, $propertyClassNamespace, $propertyType)
                             );
-                            $classBuilder->addNamespaceImport($classNamespace . '\\' . $propertyClassName);
+                            $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             $classBuilder->addProperty(
                                 ClassPropertyBuilder::fromScratch(
                                     $propertyPropertyName,
@@ -329,17 +348,35 @@ final class ValueObjectFactory
                 break;
             case $type instanceof ScalarType:
                 $fileCollection->add(
-                    $this->generateValueObject(($this->classNameFilter)($className), $classNamespace, $type)
+                    $this->generateValueObject(
+                        ($this->classNameFilter)($className),
+                        $this->extractNamespace($classNamespacePath, $type),
+                        $type
+                    )
                 );
                 break;
             case $type instanceof ArrayType:
-                $arrayClassBuilder = $this->generateValueObject(($this->classNameFilter)($className), $classNamespace, $type);
-                $this->addNamespaceImport($arrayClassBuilder, $type);
+                $arrayClassBuilder = $this->generateValueObject(
+                    ($this->classNameFilter)($className),
+                    $this->extractNamespace($classNamespacePath, $type),
+                    $type
+                );
+                $this->addNamespaceImportForType($arrayClassBuilder, $classNamespacePath, $type);
                 $fileCollection->add($arrayClassBuilder);
                 break;
             default:
                 break;
         }
+    }
+
+    private function extractNamespace(string $classNamespacePath, TypeDefinition $typeDefinition): string
+    {
+        if (! $typeDefinition instanceof CustomSupport) {
+            return $classNamespacePath;
+        }
+        $namespace = $typeDefinition->custom()['namespace'] ?? '';
+
+        return \trim($classNamespacePath . '\\' . $namespace, '\\');
     }
 
     /**
@@ -399,7 +436,17 @@ final class ValueObjectFactory
         return $classBuilder;
     }
 
-    private function addNamespaceImport(ClassBuilder $classBuilder, TypeDefinition $typeDefinition): void
+    private function addNamespaceImport(ClassBuilder $classBuilder, string $namespaceImport): void
+    {
+        $namespace = \explode('\\', $namespaceImport);
+        \array_pop($namespace);
+
+        if (\implode('\\', $namespace) !== $classBuilder->getNamespace()) {
+            $classBuilder->addNamespaceImport($namespaceImport);
+        }
+    }
+
+    private function addNamespaceImportForType(ClassBuilder $classBuilder, string $classNamespacePath, TypeDefinition $typeDefinition): void
     {
         switch (true) {
             case $typeDefinition instanceof ArrayType:
@@ -409,14 +456,25 @@ final class ValueObjectFactory
                     if (null === $itemType) {
                         continue;
                     }
+                    $itemName = $itemType->name();
 
-                    if ($itemType instanceof ReferenceType
-                        && $refType = $itemType->resolvedType()
-                    ) {
-                        $itemType = $refType->first();
+                    if ($itemType instanceof ReferenceType) {
+                        $refTypeSet = $itemType->resolvedType();
+                        $itemName = $itemType->extractNameFromReference();
+
+                        if ($refTypeSet !== null && $refType = $refTypeSet->first()) {
+                            $itemType = $refType;
+                            $itemName = $refType->name();
+                        }
                     }
-                    $itemClassName = ($this->classNameFilter)($itemType->name());
-                    $classBuilder->addNamespaceImport($classBuilder->getNamespace() . '\\' . $itemClassName);
+                    $namespace = $this->extractNamespace($classNamespacePath, $itemType);
+
+                    if ($namespace === $classBuilder->getNamespace()) {
+                        continue;
+                    }
+                    $itemClassName = ($this->classNameFilter)($itemName);
+
+                    $classBuilder->addNamespaceImport($namespace . '\\' . $itemClassName);
                 }
                 break;
             default:
