@@ -2,27 +2,25 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 0.5.0 - TBD
+## 0.5.0 - 2021-02-11
 
-### Added
 
-- Nothing.
+-----
 
-### Changed
+### Release Notes for [0.5.0](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/10)
 
-- Nothing.
+Feature release (minor)
 
-### Deprecated
+### 0.5.0
 
-- Nothing.
+- Total issues resolved: **2**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
 
-### Removed
+#### enhancement
 
-- Nothing.
-
-### Fixed
-
-- Nothing.
+ - [21: Improve value object factory](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/21) thanks to @sandrokeil
+ - [20: Add BCP 47 value object](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/20) thanks to @sandrokeil
 
 ## 0.4.0 - 2021-01-31
 
