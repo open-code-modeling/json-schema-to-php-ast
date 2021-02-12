@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "52fd2b5002831ccd3e4991a671da32f0",
+    "content-hash": "09819fcc56c8a62e88b8789186a33adc",
     "packages": [
         {
             "name": "nikic/php-parser",
@@ -121,16 +121,16 @@
         },
         {
             "name": "open-code-modeling/php-code-ast",
-            "version": "0.11.0",
+            "version": "0.12.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/open-code-modeling/php-code-ast.git",
-                "reference": "86e6d62a737080ff3a0a6b88578d8c3a765b3821"
+                "reference": "8441ce175f360b8c3cff4afa0e82b5a09dc09fdb"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/open-code-modeling/php-code-ast/zipball/86e6d62a737080ff3a0a6b88578d8c3a765b3821",
-                "reference": "86e6d62a737080ff3a0a6b88578d8c3a765b3821",
+                "url": "https://api.github.com/repos/open-code-modeling/php-code-ast/zipball/8441ce175f360b8c3cff4afa0e82b5a09dc09fdb",
+                "reference": "8441ce175f360b8c3cff4afa0e82b5a09dc09fdb",
                 "shasum": ""
             },
             "require": {
@@ -170,7 +170,7 @@
                 "issues": "https://github.com/open-code-modeling/php-code-ast/issues",
                 "source": "https://github.com/open-code-modeling/php-code-ast"
             },
-            "time": "2021-01-30T21:38:27+00:00"
+            "time": "2021-02-12T14:17:11+00:00"
         }
     ],
     "packages-dev": [
