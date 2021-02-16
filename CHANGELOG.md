@@ -24,6 +24,25 @@ All notable changes to this project will be documented in this file, in reverse 
 
 - Nothing.
 
+## 0.5.1 - 2021-02-12
+
+
+-----
+
+### Release Notes for [0.5.1](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/11)
+
+0.5.x bugfix release (patch)
+
+### 0.5.1
+
+- Total issues resolved: **1**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
+
+#### enhancement
+
+ - [22: Pump php-code-ast to 0.12.0](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/22) thanks to @sandrokeil
+
 ## 0.5.0 - 2021-02-11
 
 

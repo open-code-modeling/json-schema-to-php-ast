@@ -103,7 +103,7 @@ final class PropertyFactory
 
     public function propertyGenerator(string $name, string $type): PropertyGenerator
     {
-        return new PropertyGenerator(($this->propertyNameFilter)($name), $type, null, $this->typed);
+        return new PropertyGenerator(($this->propertyNameFilter)($name), $type, $this->typed);
     }
 
     /**
