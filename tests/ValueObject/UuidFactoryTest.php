@@ -101,7 +101,7 @@ final class UuidVO
     }
     public function toString() : string
     {
-        return $this->uuid;
+        return $this->uuid->toString();
     }
     public function equals($other) : bool
     {
@@ -112,7 +112,7 @@ final class UuidVO
     }
     public function __toString() : string
     {
-        return $this->uuid;
+        return $this->uuid->toString();
     }
 }
 EOF;

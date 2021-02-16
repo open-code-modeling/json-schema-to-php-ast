@@ -118,7 +118,11 @@ final class UuidFactory
             $this->methodToString($name)->generate(),
             $this->methodEquals($name)->generate(),
             $this->methodMagicToString($name)->generate(),
-        )->setTyped($this->typed);
+        )->setTyped($this->typed)
+            ->addNamespaceImport(
+                'Ramsey\Uuid\Uuid',
+                'Ramsey\Uuid\UuidInterface',
+            );
     }
 
     public function methodFromString(string $argumentName): MethodGenerator
@@ -164,7 +168,7 @@ final class UuidFactory
             'toString',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return $this->' . $propertyName . ';')
+            new BodyGenerator($this->parser, 'return $this->' . $propertyName . '->toString();')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('string');
@@ -207,7 +211,7 @@ PHP;
             '__toString',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, 'return $this->' . $propertyName . ';')
+            new BodyGenerator($this->parser, 'return $this->' . $propertyName . '->toString();')
         );
         $method->setTyped($this->typed);
         $method->setReturnType('string');
