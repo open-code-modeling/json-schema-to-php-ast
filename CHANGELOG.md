@@ -2,27 +2,24 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 0.5.2 - TBD
+## 0.5.2 - 2021-02-16
 
-### Added
 
-- Nothing.
+-----
 
-### Changed
+### Release Notes for [0.5.2](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/13)
 
-- Nothing.
+0.5.x bugfix release (patch)
 
-### Deprecated
+### 0.5.2
 
-- Nothing.
+- Total issues resolved: **1**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
 
-### Removed
+#### bug
 
-- Nothing.
-
-### Fixed
-
-- Nothing.
+ - [24: Fix uuid to string methods](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/24) thanks to @sandrokeil
 
 ## 0.5.1 - 2021-02-12
 
