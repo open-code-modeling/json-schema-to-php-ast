@@ -2,27 +2,24 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 0.5.3 - TBD
+## 0.5.3 - 2021-02-18
 
-### Added
 
-- Nothing.
+-----
 
-### Changed
+### Release Notes for [0.5.3](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/14)
 
-- Nothing.
+0.5.x bugfix release (patch)
 
-### Deprecated
+### 0.5.3
 
-- Nothing.
+- Total issues resolved: **1**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
 
-### Removed
+#### enhancement
 
-- Nothing.
-
-### Fixed
-
-- Nothing.
+ - [26: Add namespace shortcut](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/26) thanks to @sandrokeil
 
 ## 0.5.2 - 2021-02-16
 
