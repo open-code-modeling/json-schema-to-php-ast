@@ -376,6 +376,10 @@ final class ValueObjectFactory
         }
         $namespace = $typeDefinition->custom()['namespace'] ?? '';
 
+        if ($namespace === '') {
+            $namespace = $typeDefinition->custom()['ns'] ?? '';
+        }
+
         return \trim($classNamespacePath . '\\' . $namespace, '\\');
     }
 
