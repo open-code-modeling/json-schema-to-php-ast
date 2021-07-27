@@ -524,7 +524,7 @@ final class ShippingAddresses implements \Iterator, \Countable
     public function toArray() : array
     {
         return \array_map(static function (Address $address) {
-            return $address->toArray();
+            return $address->toString();
         }, $this->shippingAddresses);
     }
     /**
