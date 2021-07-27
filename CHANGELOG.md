@@ -2,27 +2,24 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 0.5.4 - TBD
+## 0.5.4 - 2021-07-27
 
-### Added
 
-- Nothing.
+-----
 
-### Changed
+### Release Notes for [0.5.4](https://github.com/open-code-modeling/json-schema-to-php-ast/milestone/15)
 
-- Nothing.
+0.5.x bugfix release (patch)
 
-### Deprecated
+### 0.5.4
 
-- Nothing.
+- Total issues resolved: **1**
+- Total pull requests resolved: **0**
+- Total contributors: **1**
 
-### Removed
+#### bug
 
-- Nothing.
-
-### Fixed
-
-- Nothing.
+ - [28: ArrayFactory toArray() calls wrong method](https://github.com/open-code-modeling/json-schema-to-php-ast/issues/28) thanks to @sandrokeil
 
 ## 0.5.3 - 2021-02-18
 
