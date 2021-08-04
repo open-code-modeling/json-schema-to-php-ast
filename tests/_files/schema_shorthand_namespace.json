@@ -1,4 +1,4 @@
 {
     "billing_address": "Address|namespace:Billing",
-    "address?": "ShippingAddresses|namespace:Payment"
+    "address?": "ShippingAddresses|ns:Payment"
 }

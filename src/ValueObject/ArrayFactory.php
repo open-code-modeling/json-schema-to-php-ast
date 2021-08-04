@@ -139,7 +139,7 @@ use PhpParser\Parser;
  *  public function toArray() : array
  *  {
  *      return \array_map(static function (ReasonType $reasonType) {
- *          return $reasonType->toArray();
+ *          return $reasonType->toString();
  *      }, $this->items);
  *  }
  *
@@ -523,7 +523,7 @@ PHP;
     ): MethodGenerator {
         $body = <<<'PHP'
         return \array_map(static function (%s $%s) {
-            return $%s->toArray();
+            return $%s->toString();
         }, $this->%s);
 PHP;
 

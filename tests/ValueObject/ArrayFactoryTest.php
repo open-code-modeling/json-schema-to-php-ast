@@ -223,7 +223,7 @@ final class ReasonTypeListVO implements \Iterator, \Countable
     public function toArray() : array
     {
         return \array_map(static function (ReasonType $reasonType) {
-            return $reasonType->toArray();
+            return $reasonType->toString();
         }, $this->items);
     }
     /**
