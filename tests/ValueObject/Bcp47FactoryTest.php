@@ -96,6 +96,9 @@ final class LocaleVO
     {
         return $this->bcp47;
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {

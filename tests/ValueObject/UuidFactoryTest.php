@@ -103,6 +103,9 @@ final class UuidVO
     {
         return $this->uuid->toString();
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {

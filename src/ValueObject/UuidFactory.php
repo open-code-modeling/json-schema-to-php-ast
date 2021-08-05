@@ -192,11 +192,12 @@ PHP;
         $method = new MethodGenerator(
             'equals',
             [
-                new ParameterGenerator($argumentName),
+                (new ParameterGenerator($argumentName))->setTypeDocBlockHint('mixed'),
             ],
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, $body)
         );
+        $method->setDocBlockComment('');
         $method->setTyped($this->typed);
         $method->setReturnType('bool');
 

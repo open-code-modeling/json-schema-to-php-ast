@@ -360,7 +360,7 @@ PHP;
     return \$this->$propertyName === \$$argumentName->$propertyName;
 PHP;
 
-        $parameter = new ParameterGenerator($argumentName);
+        $parameter = (new ParameterGenerator($argumentName))->setTypeDocBlockHint('mixed');
 
         $method = new MethodGenerator(
             'equals',
@@ -370,6 +370,7 @@ PHP;
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, $body)
         );
+        $method->setDocBlockComment('');
         $method->setTyped($this->typed);
         $method->setReturnType('bool');
 
@@ -420,7 +421,7 @@ PHP;
     }
     return false;
 PHP;
-        $parameter = (new ParameterGenerator($argumentName))->setVariadic(true);
+        $parameter = (new ParameterGenerator($argumentName))->setVariadic(true)->setTypeDocBlockHint('mixed');
 
         if ($className !== null) {
             $parameter->setType($className);
@@ -434,6 +435,7 @@ PHP;
             MethodGenerator::FLAG_PUBLIC,
             new BodyGenerator($this->parser, $body)
         );
+        $method->setDocBlockComment('');
         $method->setTyped($this->typed);
         $method->setReturnType('bool');
 

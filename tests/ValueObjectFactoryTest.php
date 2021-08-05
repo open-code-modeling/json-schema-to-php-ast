@@ -529,7 +529,6 @@ final class ShippingAddresses implements \Iterator, \Countable
     }
     /**
      * @param mixed $other
-     * @return bool
      */
     public function equals($other) : bool
     {
@@ -621,6 +620,9 @@ final class City
     {
         return $this->city;
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {
@@ -660,6 +662,9 @@ final class StreetAddress
     {
         return $this->streetAddress;
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {
@@ -713,6 +718,9 @@ final class State
     {
         return $this->state;
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {
@@ -720,6 +728,9 @@ final class State
         }
         return $this->state === $other->state;
     }
+    /**
+     * @param mixed ...$state
+     */
     public function isOneOf(...$state) : bool
     {
         foreach ($state as $otherState) {

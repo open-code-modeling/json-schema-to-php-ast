@@ -87,6 +87,9 @@ final class IntegerVO
     {
         return $this->number;
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {

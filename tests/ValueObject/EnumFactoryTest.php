@@ -128,6 +128,9 @@ final class EnumVO
     {
         return $this->status;
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {
@@ -135,6 +138,9 @@ final class EnumVO
         }
         return $this->status === $other->status;
     }
+    /**
+     * @param mixed ...$status
+     */
     public function isOneOf(...$status) : bool
     {
         foreach ($status as $otherStatus) {

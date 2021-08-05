@@ -228,7 +228,6 @@ final class ReasonTypeListVO implements \Iterator, \Countable
     }
     /**
      * @param mixed $other
-     * @return bool
      */
     public function equals($other) : bool
     {

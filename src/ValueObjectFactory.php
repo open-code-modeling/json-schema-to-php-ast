@@ -12,8 +12,8 @@ namespace OpenCodeModeling\JsonSchemaToPhpAst;
 
 use OpenCodeModeling\CodeAst\Builder\ClassBuilder;
 use OpenCodeModeling\CodeAst\Builder\ClassPropertyBuilder;
-use OpenCodeModeling\CodeAst\Builder\File;
 use OpenCodeModeling\CodeAst\Builder\FileCollection;
+use OpenCodeModeling\CodeAst\Builder\PhpFile;
 use OpenCodeModeling\CodeAst\Code\ClassConstGenerator;
 use OpenCodeModeling\CodeAst\FileCodeGenerator;
 use OpenCodeModeling\CodeAst\Package\ClassInfo;
@@ -141,7 +141,7 @@ final class ValueObjectFactory
             || $classBuilder->hasMethod('toBool');
         };
 
-        $this->currentFileAst = static function (File $classBuilder, ClassInfo $classInfo) use ($parser): array {
+        $this->currentFileAst = static function (PhpFile $classBuilder, ClassInfo $classInfo) use ($parser): array {
             $path = $classInfo->getPath($classBuilder->getNamespace() . '\\' . $classBuilder->getName());
             $filename = $classInfo->getFilenameFromPathAndName($path, $classBuilder->getName());
 

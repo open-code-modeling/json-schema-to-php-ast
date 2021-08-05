@@ -87,6 +87,9 @@ final class BooleanVO
     {
         return $this->boolean;
     }
+    /**
+     * @param mixed $other
+     */
     public function equals($other) : bool
     {
         if (!$other instanceof self) {
