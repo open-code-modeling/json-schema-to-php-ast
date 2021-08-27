@@ -37,6 +37,7 @@
         "open-code-modeling/php-code-ast": "^0.13.0 || 0.13.x-dev"
     },
     "require-dev": {
+        "ext-json": "*",
         "laminas/laminas-filter": "^2.9",
         "open-code-modeling/php-filter": "^0.1.1",
         "phpspec/prophecy-phpunit": "^2.0",
