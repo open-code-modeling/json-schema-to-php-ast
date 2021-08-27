@@ -235,6 +235,7 @@ final class ValueObjectFactory
      * @param TypeSet $typeSet
      * @param string $srcFolder Source folder for namespace imports
      * @param string|null $className Class name is used from $classBuilder if not set
+     * @param string|null $rootSrcFolder Source folder for namespace imports with root e.g. /Building
      * @return void
      */
     public function generateClasses(
@@ -242,12 +243,20 @@ final class ValueObjectFactory
         FileCollection $fileCollection,
         TypeSet $typeSet,
         string $srcFolder,
-        string $className = null
+        string $className = null,
+        string $rootSrcFolder = null
     ): void {
         $type = $typeSet->first();
 
+        if ($rootSrcFolder === null) {
+            $rootSrcFolder = $srcFolder;
+        }
+
         $classInfo = $this->classInfoList->classInfoForPath($srcFolder);
         $classNamespacePath = $classInfo->getClassNamespaceFromPath($srcFolder);
+
+        $rootClassInfo = $this->classInfoList->classInfoForPath($rootSrcFolder);
+        $rootClassNamespacePath = $rootClassInfo->getClassNamespaceFromPath($rootSrcFolder);
 
         if ($type instanceof ReferenceType
             && $refType = $type->resolvedType()
@@ -263,7 +272,7 @@ final class ValueObjectFactory
                     $propertyType = $propertyTypeSet->first();
 
                     $propertyClassName = ($this->classNameFilter)($propertyName);
-                    $propertyClassNamespace = $this->extractNamespace($classNamespacePath, $propertyType);
+                    $propertyClassNamespace = $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $propertyType);
                     $propertyPropertyName = ($this->propertyNameFilter)($propertyName);
 
                     switch (true) {
@@ -282,7 +291,8 @@ final class ValueObjectFactory
                                     $fileCollection,
                                     $itemTypeSet,
                                     $srcFolder,
-                                    $itemPropertyName
+                                    $itemPropertyName,
+                                    $rootSrcFolder
                                 );
                             }
                         // no break
@@ -292,7 +302,8 @@ final class ValueObjectFactory
                                 $fileCollection,
                                 $propertyTypeSet,
                                 $srcFolder,
-                                $propertyClassName
+                                $propertyClassName,
+                                $rootSrcFolder
                             );
                             $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             $classBuilder->addProperty(
@@ -308,14 +319,15 @@ final class ValueObjectFactory
                             if ($propertyRefTypeSet = $propertyType->resolvedType()) {
                                 $propertyRefType = $propertyRefTypeSet->first();
                                 $propertyRefClassName = ($this->classNameFilter)($propertyRefType->name());
-                                $propertyRefClassNamespace = $this->extractNamespace($classNamespacePath, $propertyRefType);
+                                $propertyRefClassNamespace = $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $propertyRefType);
 
                                 $this->generateClasses(
                                     ClassBuilder::fromScratch($propertyRefClassName, $propertyRefClassNamespace)->setFinal(true),
                                     $fileCollection,
                                     $propertyRefTypeSet,
                                     $srcFolder,
-                                    $propertyType->name()
+                                    $propertyType->name(),
+                                    $rootSrcFolder
                                 );
                                 $propertyClassName = $propertyRefClassName;
                                 $propertyType = $propertyRefType;
@@ -350,7 +362,7 @@ final class ValueObjectFactory
                 $fileCollection->add(
                     $this->generateValueObject(
                         ($this->classNameFilter)($className),
-                        $this->extractNamespace($classNamespacePath, $type),
+                        $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $type),
                         $type
                     )
                 );
@@ -358,10 +370,10 @@ final class ValueObjectFactory
             case $type instanceof ArrayType:
                 $arrayClassBuilder = $this->generateValueObject(
                     ($this->classNameFilter)($className),
-                    $this->extractNamespace($classNamespacePath, $type),
+                    $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $type),
                     $type
                 );
-                $this->addNamespaceImportForType($arrayClassBuilder, $classNamespacePath, $type);
+                $this->addNamespaceImportForType($arrayClassBuilder, $classNamespacePath, $rootClassNamespacePath, $type);
                 $fileCollection->add($arrayClassBuilder);
                 break;
             default:
@@ -369,8 +381,11 @@ final class ValueObjectFactory
         }
     }
 
-    private function extractNamespace(string $classNamespacePath, TypeDefinition $typeDefinition): string
-    {
+    private function extractNamespace(
+        string $classNamespacePath,
+        string $rootClassNamespacePath,
+        TypeDefinition $typeDefinition
+    ): string {
         if (! $typeDefinition instanceof CustomSupport) {
             return $classNamespacePath;
         }
@@ -380,7 +395,13 @@ final class ValueObjectFactory
             $namespace = $typeDefinition->custom()['ns'] ?? '';
         }
 
-        return \trim($classNamespacePath . '\\' . $namespace, '\\');
+        $namespace = \str_replace('/', '\\', $namespace);
+
+        return \trim(
+            (\strpos($namespace, '\\') === 0
+                ? $rootClassNamespacePath
+                : $classNamespacePath)
+            . '\\' . \trim($namespace, '\\'), '\\');
     }
 
     /**
@@ -450,7 +471,7 @@ final class ValueObjectFactory
         }
     }
 
-    private function addNamespaceImportForType(ClassBuilder $classBuilder, string $classNamespacePath, TypeDefinition $typeDefinition): void
+    private function addNamespaceImportForType(ClassBuilder $classBuilder, string $classNamespacePath, string $rootClassNamespacePath, TypeDefinition $typeDefinition): void
     {
         switch (true) {
             case $typeDefinition instanceof ArrayType:
@@ -471,7 +492,7 @@ final class ValueObjectFactory
                             $itemName = $refType->name();
                         }
                     }
-                    $namespace = $this->extractNamespace($classNamespacePath, $itemType);
+                    $namespace = $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $itemType);
 
                     if ($namespace === $classBuilder->getNamespace()) {
                         continue;

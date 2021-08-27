@@ -1,0 +1,5 @@
+{
+    "uuid": "/string|format:uuid",
+    "billing_address": "Billing/Address",
+    "address?": "/Payment/ShippingAddresses"
+}

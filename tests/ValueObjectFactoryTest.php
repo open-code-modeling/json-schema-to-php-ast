@@ -243,6 +243,49 @@ final class ValueObjectFactoryTest extends TestCase
         }
     }
 
+    /**
+     * @test
+     */
+    public function it_generates_classes_of_objects_with_type_namespaced_properties_shorthand(): void
+    {
+        $json = \file_get_contents(__DIR__ . DIRECTORY_SEPARATOR . '_files' . DIRECTORY_SEPARATOR . 'schema_shorthand_type_namespace.json');
+        $decodedJson = \json_decode($json, true, 512, \JSON_BIGINT_AS_STRING | \JSON_THROW_ON_ERROR);
+
+        $typeSet = Type::fromShorthand($decodedJson);
+        $srcFolder = 'tmp/ValueObject/Shopping';
+        $rootSrcFolder = 'tmp/ValueObject';
+
+        $fileCollection = FileCollection::emptyList();
+        $classBuilder = ClassBuilder::fromScratch('Order', 'Acme')->setFinal(true);
+
+        $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder, null, $rootSrcFolder);
+
+        $this->assertCount(2, $fileCollection);
+
+        /** @var ClassBuilder $classBuilder */
+        foreach ($fileCollection as $classBuilder) {
+            switch (true) {
+                case $classBuilder->getName() === 'Order':
+                    $this->assertSame('Acme', $classBuilder->getNamespace());
+                    $this->assertArrayHasKey('Acme\ValueObject\Shopping\Billing\Address', $classBuilder->getNamespaceImports());
+                    $this->assertArrayHasKey('Acme\ValueObject\Payment\ShippingAddresses', $classBuilder->getNamespaceImports());
+
+                    $properties = $classBuilder->getProperties();
+                    $this->assertArrayHasKey('billingAddress', $properties);
+                    $this->assertArrayHasKey('address', $properties);
+
+                    $this->assertSame('Address', $properties['billingAddress']->getType());
+                    $this->assertSame('?ShippingAddresses', $properties['address']->getType());
+                    break;
+                case $classBuilder->getName() === 'Uuid':
+                    $this->assertSame('Acme\ValueObject', $classBuilder->getNamespace());
+                    break;
+                default:
+                    $this->assertTrue(false, \sprintf('Unexpected class "%s"', $classBuilder->getName()));
+            }
+        }
+    }
+
     private function assertOrder(ClassBuilder $classBuilder): void
     {
         $this->assertSame('Order', $classBuilder->getName());
