@@ -446,7 +446,7 @@ final class Order
     public const BILLING_ADDRESS = 'billing_address';
     public const SHIPPING_ADDRESSES = 'shipping_addresses';
     private Address $billingAddress;
-    private ?ShippingAddresses $shippingAddresses;
+    private ?ShippingAddresses $shippingAddresses = null;
     public function billingAddress() : Address
     {
         return $this->billingAddress;
@@ -600,7 +600,7 @@ final class Address
     public const CITY = 'city';
     public const FEDERAL_STATE = 'federal_state';
     private StreetAddress $streetAddress;
-    private ?City $city;
+    private ?City $city = null;
     private State $federalState;
     public function streetAddress() : StreetAddress
     {

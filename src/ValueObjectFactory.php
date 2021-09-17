@@ -307,10 +307,7 @@ final class ValueObjectFactory
                             );
                             $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             $classBuilder->addProperty(
-                                ClassPropertyBuilder::fromScratch(
-                                    $propertyPropertyName,
-                                    $this->determinePropertyType($propertyType, $propertyClassName)
-                                )
+                                $this->determineProperty($propertyPropertyName, $propertyClassName, $propertyType)
                             );
                             break;
                         case $propertyType instanceof ReferenceType:
@@ -333,10 +330,7 @@ final class ValueObjectFactory
                                 $propertyType = $propertyRefType;
                             }
                             $classBuilder->addProperty(
-                                ClassPropertyBuilder::fromScratch(
-                                    $propertyPropertyName,
-                                    $this->determinePropertyType($propertyType, $propertyClassName)
-                                )
+                                $this->determineProperty($propertyPropertyName, $propertyClassName, $propertyType)
                             );
                             $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             break;
@@ -346,10 +340,7 @@ final class ValueObjectFactory
                             );
                             $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             $classBuilder->addProperty(
-                                ClassPropertyBuilder::fromScratch(
-                                    $propertyPropertyName,
-                                    $this->determinePropertyType($propertyType, $propertyClassName)
-                                )
+                                $this->determineProperty($propertyPropertyName, $propertyClassName, $propertyType)
                             );
                             break;
                         default:
@@ -512,5 +503,21 @@ final class ValueObjectFactory
         return ($typeDefinition->isRequired() === false || $typeDefinition->isNullable() === true)
             ? ('?' . $className)
             : $className;
+    }
+
+    private function determineProperty(
+        $propertyName,
+        $propertyClassName,
+        TypeDefinition $typeDefinition
+    ): ClassPropertyBuilder {
+        $property = ClassPropertyBuilder::fromScratch(
+            $propertyName,
+            $this->determinePropertyType($typeDefinition, $propertyClassName)
+        );
+        if ($typeDefinition->isRequired() === false || $typeDefinition->isNullable() === true) {
+            $property->setDefaultValue(null);
+        }
+
+        return $property;
     }
 }
