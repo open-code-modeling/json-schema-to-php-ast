@@ -276,7 +276,6 @@ final class ArrayFactory
         );
         $classBuilder->addMethod(
             ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName)->generate()),
-            ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName)->generate()),
             ClassMethodBuilder::fromNode($this->methodFromItems($name, $typeName)->generate()),
             ClassMethodBuilder::fromNode($this->methodEmptyList()->generate()),
             ClassMethodBuilder::fromNode($this->methodMagicConstruct($name, $name, $typeName)->generate()),
