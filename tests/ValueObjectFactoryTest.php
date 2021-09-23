@@ -502,7 +502,7 @@ final class ShippingAddresses implements \Iterator, \Countable
     public static function fromArray(array $shippingAddresses) : self
     {
         return new self(...array_map(static function (string $item) {
-            return Address::fromString($item);
+            return Address::fromArray($item);
         }, $shippingAddresses));
     }
     public static function fromItems(Address ...$shippingAddresses) : self
@@ -567,7 +567,7 @@ final class ShippingAddresses implements \Iterator, \Countable
     public function toArray() : array
     {
         return \array_map(static function (Address $address) {
-            return $address->toString();
+            return $address->toArray();
         }, $this->shippingAddresses);
     }
     /**

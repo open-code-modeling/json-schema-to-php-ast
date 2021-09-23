@@ -17,8 +17,14 @@ use OpenCodeModeling\CodeAst\Code\MethodGenerator;
 use OpenCodeModeling\CodeAst\Code\ParameterGenerator;
 use OpenCodeModeling\CodeAst\NodeVisitor\ClassMethod;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ArrayType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\BooleanType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\IntegerType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\NumberType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\ObjectType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ReferenceType;
 use OpenCodeModeling\JsonSchemaToPhp\Type\ScalarType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\StringType;
+use OpenCodeModeling\JsonSchemaToPhp\Type\TypeDefinition;
 use OpenCodeModeling\JsonSchemaToPhp\Type\TypeSet;
 use OpenCodeModeling\JsonSchemaToPhpAst\Common\IteratorFactory;
 use PhpParser\NodeVisitor;
@@ -199,7 +205,7 @@ final class ArrayFactory
         return $this->classBuilderFromNative($name, ...$typeDefinition->items());
     }
 
-    private function determineTypeName(string $name, TypeSet ...$typeSets): ?string
+    private function determineType(string $name, TypeSet ...$typeSets): ?TypeDefinition
     {
         if (\count($typeSets) !== 1) {
             throw new \RuntimeException('Can only handle one JSON type');
@@ -217,7 +223,7 @@ final class ArrayFactory
                 $resolvedTypeSet = $type->resolvedType();
 
                 if ($resolvedTypeSet === null) {
-                    return $type->extractNameFromReference();
+                    return $type;
                 }
                 if (\count($resolvedTypeSet) !== 1) {
                     throw new \RuntimeException('Can only handle one JSON type');
@@ -232,7 +238,25 @@ final class ArrayFactory
                 );
         }
 
-        return $type->name();
+        return $type;
+    }
+
+    private function determineTypeMethod(TypeDefinition $type): string
+    {
+        switch (true) {
+            case $type instanceof ArrayType:
+            case $type instanceof ObjectType:
+                return 'Array';
+            case $type instanceof BooleanType:
+                return 'Bool';
+            case $type instanceof IntegerType:
+                return 'Int';
+            case $type instanceof NumberType:
+                return 'Float';
+            case $type instanceof StringType:
+            default:
+                return 'String';
+        }
     }
 
     /**
@@ -242,14 +266,24 @@ final class ArrayFactory
      */
     public function nodeVisitorsFromNative(string $name, TypeSet ...$typeSets): array
     {
-        $typeName = $this->determineTypeName($name, ...$typeSets);
+        $type = $this->determineType($name, ...$typeSets);
+
+        if ($type === null) {
+            throw new \RuntimeException('Could not determine JSON schema type');
+        }
+        $typeName = $type->name();
+
+        if ($type instanceof ReferenceType) {
+            $typeName = $type->extractNameFromReference();
+        }
+        $typeMethod = $this->determineTypeMethod($type);
 
         $nodeVisitors = $this->iteratorFactory->nodeVisitorsFromNative(
             ($this->propertyNameFilter)($name),
             ($this->classNameFilter)($typeName)
         );
 
-        $nodeVisitors[] = new ClassMethod($this->methodFromArray($name, $typeName));
+        $nodeVisitors[] = new ClassMethod($this->methodFromArray($name, $typeName, 'from' . $typeMethod));
         $nodeVisitors[] = new ClassMethod($this->methodFromItems($name, $typeName));
         $nodeVisitors[] = new ClassMethod($this->methodEmptyList());
         $nodeVisitors[] = new ClassMethod($this->methodMagicConstruct($name, $name, $typeName));
@@ -260,7 +294,7 @@ final class ArrayFactory
         $nodeVisitors[] = new ClassMethod($this->methodContains($name, $typeName));
         $nodeVisitors[] = new ClassMethod($this->methodFilter($name));
         $nodeVisitors[] = new ClassMethod($this->methodItems($name, $typeName));
-        $nodeVisitors[] = new ClassMethod($this->methodToArray($name, $typeName));
+        $nodeVisitors[] = new ClassMethod($this->methodToArray($name, $typeName, 'to' . $typeMethod));
         $nodeVisitors[] = new ClassMethod($this->methodEquals());
 
         return $nodeVisitors;
@@ -268,14 +302,24 @@ final class ArrayFactory
 
     public function classBuilderFromNative(string $name, TypeSet ...$typeSets): ClassBuilder
     {
-        $typeName = $this->determineTypeName($name, ...$typeSets);
+        $type = $this->determineType($name, ...$typeSets);
+
+        if ($type === null) {
+            throw new \RuntimeException('Could not determine JSON schema type');
+        }
+        $typeName = $type->name();
+
+        if ($type instanceof ReferenceType) {
+            $typeName = $type->extractNameFromReference();
+        }
+        $typeMethod = $this->determineTypeMethod($type);
 
         $classBuilder = $this->iteratorFactory->classBuilderFromNative(
             ($this->propertyNameFilter)($name),
             ($this->classNameFilter)($typeName)
         );
         $classBuilder->addMethod(
-            ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName, 'from' . $typeMethod)->generate()),
             ClassMethodBuilder::fromNode($this->methodFromItems($name, $typeName)->generate()),
             ClassMethodBuilder::fromNode($this->methodEmptyList()->generate()),
             ClassMethodBuilder::fromNode($this->methodMagicConstruct($name, $name, $typeName)->generate()),
@@ -286,7 +330,7 @@ final class ArrayFactory
             ClassMethodBuilder::fromNode($this->methodContains($name, $typeName)->generate()),
             ClassMethodBuilder::fromNode($this->methodFilter($name)->generate()),
             ClassMethodBuilder::fromNode($this->methodItems($name, $typeName)->generate()),
-            ClassMethodBuilder::fromNode($this->methodToArray($name, $typeName)->generate()),
+            ClassMethodBuilder::fromNode($this->methodToArray($name, $typeName, 'to' . $typeMethod)->generate()),
             ClassMethodBuilder::fromNode($this->methodEquals()->generate()),
         );
 
@@ -518,11 +562,12 @@ PHP;
 
     public function methodToArray(
         string $propertyName,
-        string $argumentType
+        string $argumentType,
+        string $typeMethod = 'toString'
     ): MethodGenerator {
         $body = <<<'PHP'
         return \array_map(static function (%s $%s) {
-            return $%s->toString();
+            return $%s->%s();
         }, $this->%s);
 PHP;
 
@@ -534,7 +579,7 @@ PHP;
             'toArray',
             [],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, \sprintf($body, $argumentType, $argumentTypeVarName, $argumentTypeVarName, $propertyName))
+            new BodyGenerator($this->parser, \sprintf($body, $argumentType, $argumentTypeVarName, $argumentTypeVarName, $typeMethod, $propertyName))
         );
         $method->setTyped($this->typed);
         $method->setReturnType('array');
@@ -544,11 +589,12 @@ PHP;
 
     public function methodFromArray(
         string $argumentName,
-        string $typeName
+        string $typeName,
+        string $typeMethod = 'fromString'
     ): MethodGenerator {
         $body = <<<'PHP'
         return new self(...array_map(static function (string $item) {
-            return %s::fromString($item);
+            return %s::%s($item);
         }, $%s));
 PHP;
         $argumentName = ($this->propertyNameFilter)($argumentName);
@@ -560,7 +606,7 @@ PHP;
                 new ParameterGenerator($argumentName, 'array'),
             ],
             MethodGenerator::FLAG_PUBLIC | MethodGenerator::FLAG_STATIC,
-            new BodyGenerator($this->parser, \sprintf($body, $typeName, $argumentName))
+            new BodyGenerator($this->parser, \sprintf($body, $typeName, $typeMethod, $argumentName))
         );
         $method->setTyped($this->typed);
         $method->setReturnType('self');
