@@ -96,7 +96,7 @@ final class ValueObjectFactoryTest extends TestCase
 
         $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-        $this->assertCount(6, $fileCollection);
+        $this->assertCount(7, $fileCollection);
 
         $this->assertOrder($fileCollection->filter(($this->fileFilter)('Order'))->current());
         $this->assertShippingAddresses($fileCollection->filter(($this->fileFilter)('ShippingAddresses'))->current());
@@ -104,6 +104,7 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertStreetAddress($fileCollection->filter(($this->fileFilter)('StreetAddress'))->current());
         $this->assertCity($fileCollection->filter(($this->fileFilter)('City'))->current());
         $this->assertState($fileCollection->filter(($this->fileFilter)('State'))->current());
+        $this->assertInvalidState($fileCollection->filter(($this->fileFilter)('InvalidState'))->current());
     }
 
     /**
@@ -122,14 +123,14 @@ final class ValueObjectFactoryTest extends TestCase
 
         $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-        $this->assertCount(6, $fileCollection);
+        $this->assertCount(7, $fileCollection);
 
         $this->valueObjectFactory->addGetterMethodsForProperties($fileCollection, true);
         $this->valueObjectFactory->addClassConstantsForProperties($fileCollection);
 
         $files = $this->valueObjectFactory->generateFiles($fileCollection);
 
-        $this->assertCount(6, $files);
+        $this->assertCount(7, $files);
 
         $this->assertArrayHasKey('tmp/City.php', $files);
         $this->assertArrayHasKey('tmp/Order.php', $files);
@@ -137,6 +138,7 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertArrayHasKey('tmp/Address.php', $files);
         $this->assertArrayHasKey('tmp/State.php', $files);
         $this->assertArrayHasKey('tmp/StreetAddress.php', $files);
+        $this->assertArrayHasKey('tmp/Exception/InvalidState.php', $files);
 
         $this->assertOrderFile($files['tmp/Order.php']);
         $this->assertShippingAddressesFile($files['tmp/ShippingAddresses.php']);
@@ -144,6 +146,7 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertStreetAddressFile($files['tmp/StreetAddress.php']);
         $this->assertCityFile($files['tmp/City.php']);
         $this->assertStateFile($files['tmp/State.php']);
+        $this->assertInvalidStateFile($files['tmp/Exception/InvalidState.php']);
     }
 
     /**
@@ -162,7 +165,7 @@ final class ValueObjectFactoryTest extends TestCase
 
         $this->valueObjectFactory->generateClasses($classBuilder, $fileCollection, $typeSet, $srcFolder);
 
-        $this->assertCount(6, $fileCollection);
+        $this->assertCount(7, $fileCollection);
 
         /** @var ClassBuilder $classBuilder */
         foreach ($fileCollection as $classBuilder) {
@@ -197,6 +200,13 @@ final class ValueObjectFactoryTest extends TestCase
 
                     $this->assertSame('Address', $properties['billingAddress']->getType());
                     $this->assertSame('?ShippingAddresses', $properties['shippingAddresses']->getType());
+                    break;
+                case $classBuilder->getName() === 'InvalidState':
+                    $this->assertSame('Acme\\Address\\Exception', $classBuilder->getNamespace());
+
+                    $this->assertArrayHasKey('Fig\Http\Message\StatusCodeInterface', $classBuilder->getNamespaceImports());
+                    $this->assertArrayHasKey('InvalidArgumentException', $classBuilder->getNamespaceImports());
+                    $this->assertArrayHasKey('Acme\Address\State', $classBuilder->getNamespaceImports());
                     break;
                 default:
                     $this->assertTrue(false, \sprintf('Unexpected class "%s"', $classBuilder->getName()));
@@ -433,155 +443,172 @@ final class ValueObjectFactoryTest extends TestCase
         $this->assertSame('string', $properties['city']->getType());
     }
 
+    private function assertInvalidState(ClassBuilder $classBuilder): void
+    {
+        $this->assertSame('InvalidState', $classBuilder->getName());
+        $this->assertSame('Acme\Exception', $classBuilder->getNamespace());
+        $this->assertTrue($classBuilder->isFinal());
+        $this->assertTrue($classBuilder->isStrict());
+        $this->assertTrue($classBuilder->isTyped());
+
+        $methods = $classBuilder->getMethods();
+
+        $this->assertCount(1, $methods);
+        $this->assertArrayHasKey('forState', $methods);
+
+        $properties = $classBuilder->getProperties();
+        $this->assertCount(0, $properties);
+    }
+
     private function assertOrderFile(string $code): void
     {
         $expected = <<<'PHP'
-<?php
-
-declare (strict_types=1);
-namespace Acme;
-
-final class Order
-{
-    public const BILLING_ADDRESS = 'billing_address';
-    public const SHIPPING_ADDRESSES = 'shipping_addresses';
-    private Address $billingAddress;
-    private ?ShippingAddresses $shippingAddresses = null;
-    public function billingAddress() : Address
-    {
-        return $this->billingAddress;
-    }
-    public function shippingAddresses() : ?ShippingAddresses
-    {
-        return $this->shippingAddresses;
-    }
-}
-PHP;
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme;
+        
+        final class Order
+        {
+            public const BILLING_ADDRESS = 'billing_address';
+            public const SHIPPING_ADDRESSES = 'shipping_addresses';
+            private Address $billingAddress;
+            private ?ShippingAddresses $shippingAddresses = null;
+            public function billingAddress() : Address
+            {
+                return $this->billingAddress;
+            }
+            public function shippingAddresses() : ?ShippingAddresses
+            {
+                return $this->shippingAddresses;
+            }
+        }
+        PHP;
         $this->assertSame($expected, $code);
     }
 
     private function assertShippingAddressesFile(string $code): void
     {
         $expected = <<<'PHP'
-<?php
-
-declare (strict_types=1);
-namespace Acme;
-
-final class ShippingAddresses implements \Iterator, \Countable
-{
-    private int $position = 0;
-    /**
-     * @var Address[]
-     */
-    private array $shippingAddresses;
-    public function rewind() : void
-    {
-        $this->position = 0;
-    }
-    public function current() : Address
-    {
-        return $this->shippingAddresses[$this->position];
-    }
-    public function key() : int
-    {
-        return $this->position;
-    }
-    public function next() : void
-    {
-        ++$this->position;
-    }
-    public function valid() : bool
-    {
-        return isset($this->shippingAddresses[$this->position]);
-    }
-    public function count() : int
-    {
-        return count($this->shippingAddresses);
-    }
-    public static function fromArray(array $shippingAddresses) : self
-    {
-        return new self(...array_map(static function (string $item) {
-            return Address::fromArray($item);
-        }, $shippingAddresses));
-    }
-    public static function fromItems(Address ...$shippingAddresses) : self
-    {
-        return new self(...$shippingAddresses);
-    }
-    public static function emptyList() : self
-    {
-        return new self();
-    }
-    private function __construct(Address ...$shippingAddresses)
-    {
-        $this->shippingAddresses = $shippingAddresses;
-    }
-    public function add(Address $address) : self
-    {
-        $copy = clone $this;
-        $copy->shippingAddresses[] = $address;
-        return $copy;
-    }
-    public function remove(Address $address) : self
-    {
-        $copy = clone $this;
-        $copy->shippingAddresses = array_values(array_filter($copy->shippingAddresses, static function ($v) use($address) {
-            return !$v->equals($address);
-        }));
-        return $copy;
-    }
-    public function first() : ?Address
-    {
-        return $this->shippingAddresses[0] ?? null;
-    }
-    public function last() : ?Address
-    {
-        if (count($this->shippingAddresses) === 0) {
-            return null;
-        }
-        return $this->shippingAddresses[count($this->shippingAddresses) - 1];
-    }
-    public function contains(Address $address) : bool
-    {
-        foreach ($this->shippingAddresses as $existingItem) {
-            if ($existingItem->equals($address)) {
-                return true;
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme;
+        
+        final class ShippingAddresses implements \Iterator, \Countable
+        {
+            private int $position = 0;
+            /**
+             * @var Address[]
+             */
+            private array $shippingAddresses;
+            public function rewind() : void
+            {
+                $this->position = 0;
+            }
+            public function current() : Address
+            {
+                return $this->shippingAddresses[$this->position];
+            }
+            public function key() : int
+            {
+                return $this->position;
+            }
+            public function next() : void
+            {
+                ++$this->position;
+            }
+            public function valid() : bool
+            {
+                return isset($this->shippingAddresses[$this->position]);
+            }
+            public function count() : int
+            {
+                return count($this->shippingAddresses);
+            }
+            public static function fromArray(array $shippingAddresses) : self
+            {
+                return new self(...array_map(static function (string $item) {
+                    return Address::fromArray($item);
+                }, $shippingAddresses));
+            }
+            public static function fromItems(Address ...$shippingAddresses) : self
+            {
+                return new self(...$shippingAddresses);
+            }
+            public static function emptyList() : self
+            {
+                return new self();
+            }
+            private function __construct(Address ...$shippingAddresses)
+            {
+                $this->shippingAddresses = $shippingAddresses;
+            }
+            public function add(Address $address) : self
+            {
+                $copy = clone $this;
+                $copy->shippingAddresses[] = $address;
+                return $copy;
+            }
+            public function remove(Address $address) : self
+            {
+                $copy = clone $this;
+                $copy->shippingAddresses = array_values(array_filter($copy->shippingAddresses, static function ($v) use($address) {
+                    return !$v->equals($address);
+                }));
+                return $copy;
+            }
+            public function first() : ?Address
+            {
+                return $this->shippingAddresses[0] ?? null;
+            }
+            public function last() : ?Address
+            {
+                if (count($this->shippingAddresses) === 0) {
+                    return null;
+                }
+                return $this->shippingAddresses[count($this->shippingAddresses) - 1];
+            }
+            public function contains(Address $address) : bool
+            {
+                foreach ($this->shippingAddresses as $existingItem) {
+                    if ($existingItem->equals($address)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            public function filter(callable $filter) : self
+            {
+                return new self(...array_values(array_filter($this->shippingAddresses, static function ($v) use($filter) {
+                    return $filter($v);
+                })));
+            }
+            /**
+             * @return Address[]
+             */
+            public function items() : array
+            {
+                return $this->shippingAddresses;
+            }
+            public function toArray() : array
+            {
+                return \array_map(static function (Address $address) {
+                    return $address->toArray();
+                }, $this->shippingAddresses);
+            }
+            /**
+             * @param mixed $other
+             */
+            public function equals($other) : bool
+            {
+                if (!$other instanceof self) {
+                    return false;
+                }
+                return $this->toArray() === $other->toArray();
             }
         }
-        return false;
-    }
-    public function filter(callable $filter) : self
-    {
-        return new self(...array_values(array_filter($this->shippingAddresses, static function ($v) use($filter) {
-            return $filter($v);
-        })));
-    }
-    /**
-     * @return Address[]
-     */
-    public function items() : array
-    {
-        return $this->shippingAddresses;
-    }
-    public function toArray() : array
-    {
-        return \array_map(static function (Address $address) {
-            return $address->toArray();
-        }, $this->shippingAddresses);
-    }
-    /**
-     * @param mixed $other
-     */
-    public function equals($other) : bool
-    {
-        if (!$other instanceof self) {
-            return false;
-        }
-        return $this->toArray() === $other->toArray();
-    }
-}
-PHP;
+        PHP;
 
         $this->assertSame($expected, $code);
     }
@@ -589,206 +616,230 @@ PHP;
     private function assertAddressFile(string $code): void
     {
         $expected = <<<'PHP'
-<?php
-
-declare (strict_types=1);
-namespace Acme;
-
-final class Address
-{
-    public const STREET_ADDRESS = 'street_address';
-    public const CITY = 'city';
-    public const FEDERAL_STATE = 'federal_state';
-    private StreetAddress $streetAddress;
-    private ?City $city = null;
-    private State $federalState;
-    public function streetAddress() : StreetAddress
-    {
-        return $this->streetAddress;
-    }
-    public function city() : ?City
-    {
-        return $this->city;
-    }
-    public function federalState() : State
-    {
-        return $this->federalState;
-    }
-}
-PHP;
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme;
+        
+        final class Address
+        {
+            public const STREET_ADDRESS = 'street_address';
+            public const CITY = 'city';
+            public const FEDERAL_STATE = 'federal_state';
+            private StreetAddress $streetAddress;
+            private ?City $city = null;
+            private State $federalState;
+            public function streetAddress() : StreetAddress
+            {
+                return $this->streetAddress;
+            }
+            public function city() : ?City
+            {
+                return $this->city;
+            }
+            public function federalState() : State
+            {
+                return $this->federalState;
+            }
+        }
+        PHP;
         $this->assertSame($expected, $code);
     }
 
     private function assertBillingAddressFile(string $code): void
     {
         $expected = <<<'PHP'
-<?php
-
-declare (strict_types=1);
-namespace Acme;
-
-final class BillingAddress
-{
-    public const ADDRESS = 'address';
-    private Address $address;
-    public function address() : Address
-    {
-        return $this->address;
-    }
-}
-PHP;
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme;
+        
+        final class BillingAddress
+        {
+            public const ADDRESS = 'address';
+            private Address $address;
+            public function address() : Address
+            {
+                return $this->address;
+            }
+        }
+        PHP;
         $this->assertSame($expected, $code);
     }
 
     private function assertCityFile(string $code): void
     {
         $expected = <<<'PHP'
-<?php
-
-declare (strict_types=1);
-namespace Acme;
-
-final class City
-{
-    private string $city;
-    public static function fromString(string $city) : self
-    {
-        return new self($city);
-    }
-    private function __construct(string $city)
-    {
-        $this->city = $city;
-    }
-    public function toString() : string
-    {
-        return $this->city;
-    }
-    /**
-     * @param mixed $other
-     */
-    public function equals($other) : bool
-    {
-        if (!$other instanceof self) {
-            return false;
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme;
+        
+        final class City
+        {
+            private string $city;
+            public static function fromString(string $city) : self
+            {
+                return new self($city);
+            }
+            private function __construct(string $city)
+            {
+                $this->city = $city;
+            }
+            public function toString() : string
+            {
+                return $this->city;
+            }
+            /**
+             * @param mixed $other
+             */
+            public function equals($other) : bool
+            {
+                if (!$other instanceof self) {
+                    return false;
+                }
+                return $this->city === $other->city;
+            }
+            public function __toString() : string
+            {
+                return $this->city;
+            }
         }
-        return $this->city === $other->city;
-    }
-    public function __toString() : string
-    {
-        return $this->city;
-    }
-}
-PHP;
+        PHP;
         $this->assertSame($expected, $code);
     }
 
     private function assertStreetAddressFile(string $code): void
     {
         $expected = <<<'PHP'
-<?php
-
-declare (strict_types=1);
-namespace Acme;
-
-final class StreetAddress
-{
-    private string $streetAddress;
-    public static function fromString(string $streetAddress) : self
-    {
-        return new self($streetAddress);
-    }
-    private function __construct(string $streetAddress)
-    {
-        $this->streetAddress = $streetAddress;
-    }
-    public function toString() : string
-    {
-        return $this->streetAddress;
-    }
-    /**
-     * @param mixed $other
-     */
-    public function equals($other) : bool
-    {
-        if (!$other instanceof self) {
-            return false;
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme;
+        
+        final class StreetAddress
+        {
+            private string $streetAddress;
+            public static function fromString(string $streetAddress) : self
+            {
+                return new self($streetAddress);
+            }
+            private function __construct(string $streetAddress)
+            {
+                $this->streetAddress = $streetAddress;
+            }
+            public function toString() : string
+            {
+                return $this->streetAddress;
+            }
+            /**
+             * @param mixed $other
+             */
+            public function equals($other) : bool
+            {
+                if (!$other instanceof self) {
+                    return false;
+                }
+                return $this->streetAddress === $other->streetAddress;
+            }
+            public function __toString() : string
+            {
+                return $this->streetAddress;
+            }
         }
-        return $this->streetAddress === $other->streetAddress;
-    }
-    public function __toString() : string
-    {
-        return $this->streetAddress;
-    }
-}
-PHP;
+        PHP;
         $this->assertSame($expected, $code);
     }
 
     private function assertStateFile(string $code): void
     {
         $expected = <<<'PHP'
-<?php
-
-declare (strict_types=1);
-namespace Acme;
-
-final class State
-{
-    private const NY = 'NY';
-    private const DC = 'DC';
-    public const CHOICES = [self::NY, self::DC];
-    private string $state;
-    public static function fromString(string $state) : self
-    {
-        return new self($state);
-    }
-    public static function ny() : self
-    {
-        return new self(self::NY);
-    }
-    public static function dc() : self
-    {
-        return new self(self::DC);
-    }
-    private function __construct(string $state)
-    {
-        if (false === in_array($state, self::CHOICES, true)) {
-            throw InvalidState::forState($state);
-        }
-        $this->state = $state;
-    }
-    public function toString() : string
-    {
-        return $this->state;
-    }
-    /**
-     * @param mixed $other
-     */
-    public function equals($other) : bool
-    {
-        if (!$other instanceof self) {
-            return false;
-        }
-        return $this->state === $other->state;
-    }
-    /**
-     * @param mixed ...$state
-     */
-    public function isOneOf(...$state) : bool
-    {
-        foreach ($state as $otherState) {
-            if ($this->equals($otherState)) {
-                return true;
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme;
+        
+        use Acme\Exception\InvalidState;
+        final class State
+        {
+            private const NY = 'NY';
+            private const DC = 'DC';
+            public const CHOICES = [self::NY, self::DC];
+            private string $state;
+            public static function fromString(string $state) : self
+            {
+                return new self($state);
+            }
+            public static function ny() : self
+            {
+                return new self(self::NY);
+            }
+            public static function dc() : self
+            {
+                return new self(self::DC);
+            }
+            private function __construct(string $state)
+            {
+                if (false === in_array($state, self::CHOICES, true)) {
+                    throw InvalidState::forState($state);
+                }
+                $this->state = $state;
+            }
+            public function toString() : string
+            {
+                return $this->state;
+            }
+            /**
+             * @param mixed $other
+             */
+            public function equals($other) : bool
+            {
+                if (!$other instanceof self) {
+                    return false;
+                }
+                return $this->state === $other->state;
+            }
+            /**
+             * @param mixed ...$state
+             */
+            public function isOneOf(...$state) : bool
+            {
+                foreach ($state as $otherState) {
+                    if ($this->equals($otherState)) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            public function __toString() : string
+            {
+                return $this->state;
             }
         }
-        return false;
+        PHP;
+        $this->assertSame($expected, $code);
     }
-    public function __toString() : string
+
+    private function assertInvalidStateFile(string $code): void
     {
-        return $this->state;
-    }
-}
-PHP;
+        $expected = <<<'PHP'
+        <?php
+        
+        declare (strict_types=1);
+        namespace Acme\Exception;
+        
+        use Fig\Http\Message\StatusCodeInterface;
+        use InvalidArgumentException;
+        use Acme\State;
+        final class InvalidState extends InvalidArgumentException
+        {
+            public static function forState(string $state) : self
+            {
+                return new self(sprintf('Invalid value for "State" given. Got "%s", but allowed values are ' . implode(', ', State::CHOICES), $state, StatusCodeInterface::STATUS_BAD_REQUEST));
+            }
+        }
+        PHP;
+
         $this->assertSame($expected, $code);
     }
 }

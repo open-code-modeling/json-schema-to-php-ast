@@ -56,6 +56,7 @@ final class ValueObjectFactory
 
     private ClassInfoList $classInfoList;
     private FileCodeGenerator $fileCodeGenerator;
+    private ExceptionFactory $exceptionFactory;
 
     /**
      * @var callable
@@ -132,6 +133,13 @@ final class ValueObjectFactory
         $this->constValueFilter = $constValueFilter;
 
         $this->fileCodeGenerator = new FileCodeGenerator($parser, $printer, $classInfoList);
+        $this->exceptionFactory = new ExceptionFactory(
+            $this->classInfoList,
+            $typed,
+            $this->classNameFilter,
+            $this->propertyNameFilter,
+            $this->methodNameFilter,
+        );
 
         $this->isValueObject = static function (ClassBuilder $classBuilder): bool {
             return $classBuilder->hasMethod('fromItems')
@@ -335,13 +343,22 @@ final class ValueObjectFactory
                             $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             break;
                         case $propertyType instanceof ScalarType:
-                            $fileCollection->add(
-                                $this->generateValueObject($propertyClassName, $propertyClassNamespace, $propertyType)
-                            );
+                            $valueObjectClassBuilder = $this->generateValueObject($propertyClassName, $propertyClassNamespace, $propertyType);
+                            $fileCollection->add($valueObjectClassBuilder);
+
                             $this->addNamespaceImport($classBuilder, $propertyClassNamespace . '\\' . $propertyClassName);
                             $classBuilder->addProperty(
                                 $this->determineProperty($propertyPropertyName, $propertyClassName, $propertyType)
                             );
+
+                            if ($propertyType instanceof StringType && $propertyType->enum() !== null) {
+                                $enumExceptionClassBuilder = $this->exceptionFactory->classBuilder(
+                                    $propertyType,
+                                    $propertyClassNamespace . '\\' . $propertyClassName
+                                );
+                                $fileCollection->add($enumExceptionClassBuilder);
+                                $valueObjectClassBuilder->addNamespaceImport($enumExceptionClassBuilder->getFqcn());
+                            }
                             break;
                         default:
                             break;
@@ -350,13 +367,19 @@ final class ValueObjectFactory
                 $fileCollection->add($classBuilder);
                 break;
             case $type instanceof ScalarType:
-                $fileCollection->add(
-                    $this->generateValueObject(
-                        ($this->classNameFilter)($className),
-                        $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $type),
-                        $type
-                    )
-                );
+                $namespace = $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $type);
+                $valueObjectClassBuilder = $this->generateValueObject(($this->classNameFilter)($className), $namespace, $type);
+
+                $fileCollection->add($valueObjectClassBuilder);
+
+                if ($type instanceof StringType && $type->enum() !== null) {
+                    $enumExceptionClassBuilder = $this->exceptionFactory->classBuilder(
+                        $type,
+                        $namespace . '\\' . ($this->classNameFilter)($className)
+                    );
+                    $fileCollection->add($enumExceptionClassBuilder);
+                    $valueObjectClassBuilder->addNamespaceImport($enumExceptionClassBuilder->getFqcn());
+                }
                 break;
             case $type instanceof ArrayType:
                 $arrayClassBuilder = $this->generateValueObject(
