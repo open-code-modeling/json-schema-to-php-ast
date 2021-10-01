@@ -528,7 +528,7 @@ final class ValueObjectFactoryTest extends TestCase
             }
             public static function fromArray(array $shippingAddresses) : self
             {
-                return new self(...array_map(static function (string $item) {
+                return new self(...array_map(static function (array $item) {
                     return Address::fromArray($item);
                 }, $shippingAddresses));
             }

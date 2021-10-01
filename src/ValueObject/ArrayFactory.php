@@ -283,7 +283,7 @@ final class ArrayFactory
             ($this->classNameFilter)($typeName)
         );
 
-        $nodeVisitors[] = new ClassMethod($this->methodFromArray($name, $typeName, 'from' . $typeMethod));
+        $nodeVisitors[] = new ClassMethod($this->methodFromArray($name, $typeName, 'from' . $typeMethod, \lcfirst($typeMethod)));
         $nodeVisitors[] = new ClassMethod($this->methodFromItems($name, $typeName));
         $nodeVisitors[] = new ClassMethod($this->methodEmptyList());
         $nodeVisitors[] = new ClassMethod($this->methodMagicConstruct($name, $name, $typeName));
@@ -319,7 +319,7 @@ final class ArrayFactory
             ($this->classNameFilter)($typeName)
         );
         $classBuilder->addMethod(
-            ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName, 'from' . $typeMethod)->generate()),
+            ClassMethodBuilder::fromNode($this->methodFromArray($name, $typeName, 'from' . $typeMethod, \lcfirst($typeMethod))->generate()),
             ClassMethodBuilder::fromNode($this->methodFromItems($name, $typeName)->generate()),
             ClassMethodBuilder::fromNode($this->methodEmptyList()->generate()),
             ClassMethodBuilder::fromNode($this->methodMagicConstruct($name, $name, $typeName)->generate()),
@@ -590,10 +590,11 @@ PHP;
     public function methodFromArray(
         string $argumentName,
         string $typeName,
-        string $typeMethod = 'fromString'
+        string $typeMethod = 'fromString',
+        string $type = 'string'
     ): MethodGenerator {
         $body = <<<'PHP'
-        return new self(...array_map(static function (string $item) {
+        return new self(...array_map(static function (%s $item) {
             return %s::%s($item);
         }, $%s));
 PHP;
@@ -606,7 +607,7 @@ PHP;
                 new ParameterGenerator($argumentName, 'array'),
             ],
             MethodGenerator::FLAG_PUBLIC | MethodGenerator::FLAG_STATIC,
-            new BodyGenerator($this->parser, \sprintf($body, $typeName, $typeMethod, $argumentName))
+            new BodyGenerator($this->parser, \sprintf($body, $type, $typeName, $typeMethod, $argumentName))
         );
         $method->setTyped($this->typed);
         $method->setReturnType('self');
