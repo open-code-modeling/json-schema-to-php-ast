@@ -143,10 +143,10 @@ final class ValueObjectFactory
 
         $this->isValueObject = static function (ClassBuilder $classBuilder): bool {
             return $classBuilder->hasMethod('fromItems')
-            || $classBuilder->hasMethod('toString')
-            || $classBuilder->hasMethod('toInt')
-            || $classBuilder->hasMethod('toFloat')
-            || $classBuilder->hasMethod('toBool');
+                || $classBuilder->hasMethod('toString')
+                || $classBuilder->hasMethod('toInt')
+                || $classBuilder->hasMethod('toFloat')
+                || $classBuilder->hasMethod('toBool');
         };
 
         $this->currentFileAst = static function (PhpFile $classBuilder, ClassInfo $classInfo) use ($parser): array {
@@ -191,7 +191,7 @@ final class ValueObjectFactory
                     default:
                         return $this->stringFactory->nodeVisitors($typeDefinition);
                 }
-                // no break
+            // no break
             case $typeDefinition instanceof IntegerType:
                 return $this->integerFactory->nodeVisitors($typeDefinition);
             case $typeDefinition instanceof BooleanType:
@@ -293,9 +293,10 @@ final class ValueObjectFactory
                                 }
                                 $itemClassName = ($this->classNameFilter)($itemType->name());
                                 $itemPropertyName = ($this->propertyNameFilter)($itemType->name());
+                                $itemClassNamespace = $this->extractNamespace($classNamespacePath, $rootClassNamespacePath, $itemType);
 
                                 $this->generateClasses(
-                                    ClassBuilder::fromScratch($itemClassName, $classNamespacePath)->setFinal(true),
+                                    ClassBuilder::fromScratch($itemClassName, $itemClassNamespace)->setFinal(true),
                                     $fileCollection,
                                     $itemTypeSet,
                                     $srcFolder,
