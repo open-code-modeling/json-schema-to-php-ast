@@ -181,12 +181,12 @@ final class UuidFactory
         $propertyName = ($this->propertyNameFilter)($propertyName);
         $argumentName = ($this->propertyNameFilter)($argumentName);
 
-        $body = <<<PHP
-    if(!\$$argumentName instanceof self) {
+        $body = <<<'PHP'
+    if(!$%s instanceof self) {
        return false;
     }
 
-    return \$this->$propertyName->toString() === \$$argumentName->$propertyName->toString();
+    return $this->%s->toString() === $%s->%s->toString();
 PHP;
 
         $method = new MethodGenerator(
@@ -195,7 +195,7 @@ PHP;
                 (new ParameterGenerator($argumentName))->setTypeDocBlockHint('mixed'),
             ],
             MethodGenerator::FLAG_PUBLIC,
-            new BodyGenerator($this->parser, $body)
+            new BodyGenerator($this->parser, \sprintf($body, $argumentName, $propertyName, $argumentName, $propertyName))
         );
         $method->setDocBlockComment('');
         $method->setTyped($this->typed);
