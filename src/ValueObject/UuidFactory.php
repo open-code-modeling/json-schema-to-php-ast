@@ -186,7 +186,7 @@ final class UuidFactory
        return false;
     }
 
-    return \$this->$propertyName === \$$argumentName->$propertyName;
+    return \$this->$propertyName->toString() === \$$argumentName->$propertyName->toString();
 PHP;
 
         $method = new MethodGenerator(

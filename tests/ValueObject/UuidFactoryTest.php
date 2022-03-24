@@ -111,7 +111,7 @@ final class UuidVO
         if (!$other instanceof self) {
             return false;
         }
-        return $this->uuid === $other->uuid;
+        return $this->uuid->toString() === $other->uuid->toString();
     }
     public function __toString() : string
     {
